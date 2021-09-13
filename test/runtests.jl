@@ -1,6 +1,7 @@
-using .FuzzySets
-using Test
+using FuzzySets, Test
 
-@testset "FuzzySets.jl" begin
-    @test FuzzySets.name() == "FuzzySets.jl"
+@time begin
+@time @testset "Fuzzy Sets" begin include("FuzzySets.jl") end
+@time @testset "Fuzzy Numbers" begin include("FuzzyNumbers.jl") end
+@time @testset "Fuzzy Weighted Averages" begin include("FuzzyWeightedAverages.jl") end
 end

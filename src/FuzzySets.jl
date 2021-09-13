@@ -1,6 +1,11 @@
 module FuzzySets
 
-# Write your package code here.
 name() = return "FuzzySets.jl"
+
+using Plots
+
+include("FuzzyNumbers.jl")
+include("IntervalArithmetic.jl")
+include("FuzzyWeightedAverages.jl")
 
 end
