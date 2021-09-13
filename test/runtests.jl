@@ -1,6 +1,6 @@
-using FuzzySets
+using .FuzzySets
 using Test
 
 @testset "FuzzySets.jl" begin
-    # Write your tests here.
+    @test FuzzySets.name() == "FuzzySets.jl"
 end
