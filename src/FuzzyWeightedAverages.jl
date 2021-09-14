@@ -45,3 +45,24 @@ function fwa(levelendpoints)
 	# println("averages=", averages)
 	return [minimum(averages), maximum(averages)]
 end
+
+function fuzzy_weighted_average(X⃗::FuzzyVector, W⃗::FuzzyVector)
+	#FIXME: more than 2-d patterns
+	# pattern_vectors = [X.grades for X in X⃗.numbers]
+	# weight_vectors = [W.grades for W in W⃗.numbers]
+
+	xx = []
+	ww = []
+	A₁ = X⃗.numbers[1]
+	A₂ = X⃗.numbers[2]
+	W₁ = W⃗.numbers[1]
+	W₂ = W⃗.numbers[2]
+	for i = 1:length(A₁)
+		push!(xx, [A₁[i], A₂[i]])
+		push!(ww, [W₁[i], W₂[i]])
+	end
+
+	combinations = FuzzySets.getcombinations.(xx, ww)
+	grades = FuzzySets.fwa.(combinations)
+	return FuzzySets.FuzzyNumber(A₁.levels, grades)
+end
