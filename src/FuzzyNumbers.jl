@@ -11,14 +11,14 @@ mutable struct FuzzyNumber <: FuzzySet
         return new(levels, grades)
     end
 
-    function FuzzyNumber(levels::Vector{Float64}; number::Number=0.0)
+    function FuzzyNumber(levels::Vector{Float64}; number::Number=0.0, width::Number=0.5)
         println("FuzzyNumber $number created")
-        return new(levels, triangle.(levels, b=number))
+        return new(levels, triangle.(levels, b=number, width=width))
     end
 end
 
 Base.getindex(A::FuzzyNumber, i::Int64) = A.grades[i]
-length(A::FuzzyNumber) = length(A.grades)
+Base.length(A::FuzzyNumber) = length(A.grades)
 
 function triangle(x::Float64; b=0, width=0.5)
     left(α, a, b) = (b - a) * α + a
@@ -28,11 +28,11 @@ function triangle(x::Float64; b=0, width=0.5)
 end
 
 function triangle(levels::Vector{Float64}; b=0, width=0.5)
-    return triangle.(levels)
+    return triangle.(levels, b=b, width=width)
 end
 
 function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black")
-    println("fuzzy number ", maximum(fuzzynumber.grades))
+    println("fuzzy number ", maximum(maximum(fuzzynumber.grades)))
 	if isnothing(fig)
 		if isnothing(range)
             fig = plot(ylims = (0, 1), dpi=600)

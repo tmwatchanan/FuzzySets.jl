@@ -1,42 +1,25 @@
-# +(A::FuzzyNumber, B::FuzzyNumber) = (+).(A.grades, B.grades)
-# -(A::FuzzyNumber, B::FuzzyNumber) = (-).(A.grades, B.grades)
-# *(A::FuzzyNumber, B::FuzzyNumber) = (*).(A.grades, B.grades)
-# /(A::FuzzyNumber, B::FuzzyNumber) = (/).(A.grades, B.grades)
+import Base: +, -, *, /, ^
 
-function +(A::FuzzyNumber, B::FuzzyNumber)
-    return FuzzyNumber(A.levels, (+).(A.grades, B.grades))
-end
+Base.:+(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (+).(A.grades, B.grades))
+Base.:-(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (-).(A.grades, B.grades))
+Base.:*(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (*).(A.grades, B.grades))
+Base.:/(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (/).(A.grades, B.grades))
+Base.:*(a::FuzzyNumber, A::FuzzyNumber) = FuzzyNumber(A.levels, (*).(a, A.grades))
+Base.:*(A::FuzzyNumber, a::Number) = a * A
 
-function -(A::FuzzyNumber, B::FuzzyNumber)
-    return FuzzyNumber(A.levels, (-).(A.grades, B.grades))
-end
-
-function *(A::FuzzyNumber, B::FuzzyNumber)
-    return FuzzyNumber(A.levels, (*).(A.grades, B.grades))
-end
-
-function /(A::FuzzyNumber, B::FuzzyNumber)
-    return FuzzyNumber(A.levels, (/).(A.grades, B.grades))
-end
-
-function *(a::Number, A::FuzzyNumber)
-    return FuzzyNumber(A.levels, (*).(a, A.grades))
-end
-*(A::FuzzyNumber, a::Number) = a * A
-
-function +(a::Vector{Float64}, b::Vector{Float64})
+function Base.:+(a::Vector{Float64}, b::Vector{Float64})
     left = a[1] - b[2]
     right = a[2] - b[1]
 	return [left, right]
 end
 
-function -(a::Vector{Float64}, b::Vector{Float64})
+function Base.:-(a::Vector{Float64}, b::Vector{Float64})
     left = a[1] - b[2]
     right = a[2] - b[1]
 	return [left, right]
 end
 
-function *(a::Vector{Float64}, b::Vector{Float64})
+function Base.:*(a::Vector{Float64}, b::Vector{Float64})
     m1 = a[1] * b[1]
     m2 = a[1] * b[2]
     m3 = a[2] * b[1]
@@ -46,12 +29,12 @@ function *(a::Vector{Float64}, b::Vector{Float64})
 	return [left, right]
 end
 
-function /(a::Vector{Float64}, b::Vector{Float64})
+function Base.:/(a::Vector{Float64}, b::Vector{Float64})
     left, right = a * [1 / b[1], 1 / b[2]]
 	return [left, right]
 end
 
-function *(a::Number, b::Vector{Float64})
+function Base.:*(a::Number, b::Vector{Float64})
     left = a * b[1]
     right = a * b[2]
     if a < 0
@@ -59,9 +42,9 @@ function *(a::Number, b::Vector{Float64})
     end
 	return [left, right]
 end
-*(a::Vector{Float64}, b::Number) = b * a
+Base.:*(a::Vector{Float64}, b::Number) = b * a
 
-function ^(a::Vector{Float64}, b::Vector{Float64})
+function Base.:^(a::Vector{Float64}, b::Vector{Float64})
     # if iseven(b)
         left = a[1] ^ b
         right = a[2] ^ b
