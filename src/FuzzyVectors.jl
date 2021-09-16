@@ -11,23 +11,35 @@ function Base.:∪(FV::FuzzyVector, vec::Vector{FuzzyNumber})
    return FV
 end
 
-function draw(FV::FuzzyVector; fig=nothing, range=nothing, linecolor="black")
+function draw(FV::FuzzyVector; fig=nothing, xlims=nothing, ylims=nothing, step=0.001, linecolor="black")
 	if isnothing(fig)
-		if isnothing(range)
-            fig = plot(ylims = (0, 1), dpi=600)
+		if isnothing(xlims) || isnothing(ylims)
+			fig = plot(xlabel=L"x_1", ylabel=L"x_2", zlabel=L"\mu", zlims=(0, 1), dpi=600)
         else
-			xmin = range[1]
-			xmax = range[2]
-            fig = plot(xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:1:xmax), dpi=600)
+			fig = plot(xlabel=L"x_1", ylabel=L"x_2", zlabel=L"\mu", xlims=xlims, ylims=ylims, zlims=(0, 1), dpi=600)
 		end
 	end
 	if linecolor == "random"
 		linecolor = rand(["black", "red", "blue", "green"])
 	end
-	for i = 1:length(fuzzynumber.levels)
-		lvl = fuzzynumber.levels[i]
-		plot!(fig, fuzzynumber.grades[i, :], [lvl, lvl], linecolor=linecolor, legend=false)
-	end
+
+	A₁ = FV[1]
+	A₂ = FV[2]
+	X = collect(A₁.grades[1][1]:step:A₁.grades[1][2])
+	Y = collect(A₂.grades[1][1]:step:A₂.grades[1][2])
+	Z = [min(A₁[x], A₂[y]) for x in X, y in Y]
+	surface!(fig, X, Y, Z, c=:jet1)
+	# μ(x, y) = min(A₁[x], A₂[y])
+	# surface!(fig, X, Y, μ, c=:jet1)
+	
+    # marking peak
+	max_indices = argmax(Z)
+	max_x = X[max_indices[1]]
+	max_y = Y[max_indices[2]]
+	μ = Z[max_indices]
+	plot!(fig, annotation=[(max_x, max_y, μ)])
+    # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
+
     current()
     return fig
 end

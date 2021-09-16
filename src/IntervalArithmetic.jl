@@ -4,7 +4,7 @@ Base.:+(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (+).(A.grades, B
 Base.:-(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (-).(A.grades, B.grades))
 Base.:*(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (*).(A.grades, B.grades))
 Base.:/(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (/).(A.grades, B.grades))
-Base.:*(a::FuzzyNumber, A::FuzzyNumber) = FuzzyNumber(A.levels, (*).(a, A.grades))
+Base.:*(a::Number, A::FuzzyNumber) = FuzzyNumber(A.levels, (*).(a, A.grades))
 Base.:*(A::FuzzyNumber, a::Number) = a * A
 
 function Base.:+(a::Vector{Float64}, b::Vector{Float64})

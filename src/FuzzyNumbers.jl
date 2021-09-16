@@ -17,8 +17,18 @@ mutable struct FuzzyNumber <: FuzzySet
     end
 end
 
-Base.getindex(A::FuzzyNumber, i::Int64) = A.grades[i]
 Base.length(A::FuzzyNumber) = length(A.grades)
+function Base.getindex(A::FuzzyNumber, x::Number)
+    mfx = 0.0
+    for l = length(A.grades):-1:1
+        if A.grades[l][1] ≤ x && x ≤ A.grades[l][2]
+            mfx = A.levels[l]
+            break
+        end
+    end
+    return mfx
+end
+peak_at(A::FuzzyNumber) = sum(A.grades[end]) / 2
 
 function triangle(x::Float64; b=0, width=0.5)
     left(α, a, b) = (b - a) * α + a
@@ -45,10 +55,17 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
 	if linecolor == "random"
 		linecolor = rand(["black", "red", "blue", "green"])
 	end
+
+    # draw level cuts
 	for i = 1:length(fuzzynumber.levels)
 		lvl = fuzzynumber.levels[i]
 		plot!(fig, fuzzynumber.grades[i, :], [lvl, lvl], linecolor=linecolor, legend=false)
 	end
+
+    # marking peak
+    vline!(fig, [peak_at(fuzzynumber)], line=(:dot), linecolor=:black, legend=false)
+    μ = fuzzynumber[peak_at(fuzzynumber)]
+    annotate!(fig, [(peak_at(fuzzynumber), μ, (μ, 8, :black, :left))])
     current()
     return fig
 end
