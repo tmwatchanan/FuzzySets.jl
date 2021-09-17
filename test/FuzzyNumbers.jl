@@ -17,3 +17,7 @@ B = FuzzyNumber(levels, number=5.0)
 @test maximum(maximum(B.grades)) == 5.0
 
 draw(A)
+
+using GLMakie
+points = [Point2f0(A.grades[i][1], A.levels[i]) => Point2f0(A.grades[i][2], A.levels[i]) for i = 1:length(A.levels)]
+linesegments(points, color = :red, linewidth = 2)

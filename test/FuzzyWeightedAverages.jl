@@ -19,3 +19,8 @@ AVG = fuzzy_weighted_average(X⃗, W⃗)
 @test maximum(maximum(AVG.grades)) == μ
 
 # fv = fv ∪ [A₂]
+
+x₁ = [1.8, 2.2]
+x₂ = [2.8, 3.2]
+w₁ = [0.55, 0.95]
+w₂ = [0.05, 0.45]

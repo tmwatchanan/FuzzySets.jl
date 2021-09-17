@@ -2,13 +2,14 @@ module FuzzySets
 
 name() = return "FuzzySets.jl"
 
-using Plots
+using GLMakie
 using LaTeXStrings
 
 include("FuzzyNumbers.jl")
 include("FuzzyVectors.jl")
 include("IntervalArithmetic.jl")
 include("FuzzyWeightedAverages.jl")
+include("LFCM.jl")
 
 export
     FuzzyNumber, FuzzyVector,
