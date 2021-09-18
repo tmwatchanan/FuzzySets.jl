@@ -1,5 +1,14 @@
 import Base: +, -, *, /, ^
 
+struct Interval
+    left::Float64
+    right::Float64
+
+    function Interval(a::Vector{Float64})
+        return new(a[1], a[2])
+    end
+end
+
 Base.:+(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (+).(A.grades, B.grades))
 Base.:-(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (-).(A.grades, B.grades))
 Base.:*(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (*).(A.grades, B.grades))
@@ -44,10 +53,18 @@ function Base.:*(a::Number, b::Vector{Float64})
 end
 Base.:*(a::Vector{Float64}, b::Number) = b * a
 
-function Base.:^(a::Vector{Float64}, b::Vector{Float64})
-    # if iseven(b)
-        left = a[1] ^ b
-        right = a[2] ^ b
-    # end
+function Base.:^(a::Vector{Float64}, b::Number)
+    if b == 2
+        if a[1] == 0 || a[2] == 0
+            left = 0
+            right = a[1] == 0 ? a[2]^2 : a[1]^2
+        else if a[1]^2 <= a[2]^2
+            left = a[1] ^ b
+            right = a[2] ^ b
+        elseif a[2]^2 <= a[1]^2
+            left = a[2] ^ b
+            right = a[1] ^ b
+        end
+    end
 	return [left, right]
 end

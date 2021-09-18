@@ -5,24 +5,14 @@ end
 Base.length(FV::FuzzyVector) = size(FV.numbers, 1)
 Base.getindex(FV::FuzzyVector, i::Int64) = FV.numbers[i]
 Base.show(io::IO, FV::FuzzyVector) = println(io, "fuzzy vector length $(length(FV))")
+Base.iterate(FV::FuzzyVector, state=1) = state > length(FV.numbers) ? nothing : FV.numbers[state]
 
 function Base.:∪(FV::FuzzyVector, vec::Vector{FuzzyNumber})
    append!(FV.numbers, vec)
    return FV
 end
 
-function draw(ax::Axis3, FV::FuzzyVector; xlims=nothing, ylims=nothing, step=0.001, linecolor="black")
-	# if isnothing(fig)
-	# 	if isnothing(xlims) || isnothing(ylims)
-	# 		fig = plot(xlabel=L"x_1", ylabel=L"x_2", zlabel=L"\mu", zlims=(0, 1), dpi=600)
-    #     else
-	# 		fig = plot(xlabel=L"x_1", ylabel=L"x_2", zlabel=L"\mu", xlims=xlims, ylims=ylims, zlims=(0, 1), dpi=600)
-	# 	end
-	# end
-	# if linecolor == "random"
-	# 	linecolor = rand(["black", "red", "blue", "green"])
-	# end
-
+function draw(ax::Axis3, FV::FuzzyVector; step=0.001)
 	A₁ = FV[1]
 	A₂ = FV[2]
 	X = collect(A₁.grades[1][1]:step:A₁.grades[1][2])
@@ -36,8 +26,4 @@ function draw(ax::Axis3, FV::FuzzyVector; xlims=nothing, ylims=nothing, step=0.0
 	# max_y = Y[max_indices[2]]
 	# μ = Z[max_indices]
     # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
-
-    # current()
-	# current_figure()
-    # return figure
 end

@@ -12,7 +12,7 @@ A = FuzzyNumber(levels, number=0.0, width=0.5)
 @test A[0.5] == 0.0
 @test A[1] == 0.0
 
-B = FuzzyNumber(levels, number=5.0)
+B = FuzzyNumber(levels, number=5.0, width=0.5)
 @test B.levels == levels
 @test maximum(maximum(B.grades)) == 5.0
 
