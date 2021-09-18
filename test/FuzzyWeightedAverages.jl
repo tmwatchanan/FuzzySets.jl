@@ -24,3 +24,6 @@ x₁ = [1.8, 2.2]
 x₂ = [2.8, 3.2]
 w₁ = [0.55, 0.95]
 w₂ = [0.05, 0.45]
+combinations = FuzzySets.getcombinations([x₁, x₂], [w₁, w₂])
+grades = FuzzySets.fwa(combinations)
+@test all(grades .≈ [1.85, 2.65])
