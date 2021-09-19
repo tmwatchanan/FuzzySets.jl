@@ -1,12 +1,13 @@
-function getcombinations(patterns, weights)
+function getcombinations(patterns::Vector{Interval}, weights::Vector{Interval})
 	N = 2length(patterns)
 	inners = 2 .^ collect(0:N-1)
 	outers = reverse(inners)
 	variables = [patterns; weights]
-	combs = []
+	combs = Float64[]
 	for (inner, outer, var) in zip(inners, outers, variables)
-		c = repeat(var, inner=inner, outer=outer)
-		if isempty(combs)
+		endpoints = [var.left, var.right]
+		c = repeat(endpoints, inner=inner, outer=outer)
+		if Base.isempty(combs)
 			combs = c
 		else
 			combs = hcat(combs, c)
@@ -15,7 +16,7 @@ function getcombinations(patterns, weights)
 	return combs
 end
 
-function fwa(levelendpoints)
+function fwa(levelendpoints::Matrix{Float64})
 	n = Int(size(levelendpoints)[2] / 2)
 	averages = []
 	for endpoints in eachrow(levelendpoints)
@@ -33,7 +34,7 @@ function fwa(levelendpoints)
 			push!(averages, avg)
 		end
 	end
-	return [minimum(averages), maximum(averages)]
+	return Interval(minimum(averages), maximum(averages))
 end
 
 function fuzzy_weighted_average(X⃗::FuzzyVector, W⃗::FuzzyVector)

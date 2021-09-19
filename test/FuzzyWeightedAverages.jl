@@ -16,14 +16,31 @@ W₂ = FuzzyNumber(levels, number=w₂)
 X⃗ = FuzzyVector([A₁, A₂])
 W⃗ = FuzzyVector([W₁, W₂])
 AVG = fuzzy_weighted_average(X⃗, W⃗)
-@test maximum(maximum(AVG.grades)) == μ
+@test core(AVG) == Interval(μ)
+draw(AVG)
 
-# fv = fv ∪ [A₂]
-
-x₁ = [1.8, 2.2]
-x₂ = [2.8, 3.2]
-w₁ = [0.55, 0.95]
-w₂ = [0.05, 0.45]
+x₁ = Interval(1.8, 2.2)
+x₂ = Interval(2.8, 3.2)
+w₁ = Interval(0.55, 0.95)
+w₂ = Interval(0.05, 0.45)
 combinations = FuzzySets.getcombinations([x₁, x₂], [w₁, w₂])
+@test combinations == [
+    1.8  2.8  0.55  0.05;
+    2.2  2.8  0.55  0.05;
+    1.8  3.2  0.55  0.05;
+    2.2  3.2  0.55  0.05;
+    1.8  2.8  0.95  0.05;
+    2.2  2.8  0.95  0.05;
+    1.8  3.2  0.95  0.05;
+    2.2  3.2  0.95  0.05;
+    1.8  2.8  0.55  0.45;
+    2.2  2.8  0.55  0.45;
+    1.8  3.2  0.55  0.45;
+    2.2  3.2  0.55  0.45;
+    1.8  2.8  0.95  0.45;
+    2.2  2.8  0.95  0.45;
+    1.8  3.2  0.95  0.45;
+    2.2  3.2  0.95  0.45;
+]
 grades = FuzzySets.fwa(combinations)
-@test all(grades .≈ [1.85, 2.65])
+@test grades ≈ Interval(1.85, 2.65)

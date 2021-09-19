@@ -15,7 +15,8 @@ function d()
 		push!(xx, [A₁.grades[i], A₂.grades[i]])
 		push!(ww, [W₁.grades[i], W₂.grades[i]])
 	end
+end
 
-function d(a::Vector{Float64}, b::Vector{Float64})
+function d(a::Vector{Interval}, b::Vector{Interval})
 
 end
