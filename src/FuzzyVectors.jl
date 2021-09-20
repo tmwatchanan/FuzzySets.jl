@@ -17,7 +17,7 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001)
 	A₂ = FV[2]
 	X = collect(A₁.grades[1][1]:step:A₁.grades[1][2])
 	Y = collect(A₂.grades[1][1]:step:A₂.grades[1][2])
-	Z = [min(A₁[x], A₂[y]) for x in X, y in Y]
+	Z = [min(A₁(x), A₂(y)) for x in X, y in Y]
 	surface!(ax, X, Y, Z, colormap=:jet1, axis=(type=Axis3,))
 	
     # marking peak
@@ -26,4 +26,18 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001)
 	# max_y = Y[max_indices[2]]
 	# μ = Z[max_indices]
     # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
+end
+
+function draw2d(FV::FuzzyVector; step=0.001, fig=nothing) # TODO:
+	A₁ = FV[1]
+	A₂ = FV[2]
+	X = collect(A₁.grades[1][1]:step:A₁.grades[1][2])
+	Y = collect(A₂.grades[1][1]:step:A₂.grades[1][2])
+	Z = [min(A₁(x), A₂(y)) for x in X, y in Y]
+	if isnothing(fig)
+		fig = Plots.contour(X, Y, Z, fill=true, c=:jet1)
+	else
+		fig = Plots.contour!(fig, X, Y, Z, fill=true, c=:jet1)
+	end
+	fig
 end
