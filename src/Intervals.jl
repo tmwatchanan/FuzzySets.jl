@@ -73,7 +73,7 @@ Base.:/(a::Interval, b::Interval) = a * Interval(1 / b.left, 1 / b.right)
 
 function Base.:^(a::Interval, b::Real)
     if b == 2
-        if a.left a.right
+        if a.left <= 0 && 0 <= a.right
             left = 0
             right = a.left == 0 ? a.right^2 : a.left^2
         elseif a.left^2 <= a.right^2
@@ -83,6 +83,12 @@ function Base.:^(a::Interval, b::Real)
             left = a.right ^ b
             right = a.left ^ b
         end
+    elseif b == 1 / 2
+        left = sqrt(a.left)
+        right = sqrt(a.right)
+    else
+        left = a.left ^ b
+        right = a.right ^ b
     end
 	Interval(left, right)
 end

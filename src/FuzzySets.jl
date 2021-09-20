@@ -4,6 +4,7 @@ name() = return "FuzzySets.jl"
 
 using GLMakie
 using LaTeXStrings
+import Plots
 
 include("Intervals.jl")
 include("FuzzySet.jl")

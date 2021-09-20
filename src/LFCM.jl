@@ -1,22 +1,44 @@
 function d(A⃗::FuzzyVector, B⃗::FuzzyVector)
-    for (A, B) in zip(A⃗, B⃗)
-        println(A, B)
-    end
-end
-
-function d()
-	xx = []
-	ww = []
-	A₁ = X⃗.numbers[1]
-	A₂ = X⃗.numbers[2]
-	W₁ = W⃗.numbers[1]
-	W₂ = W⃗.numbers[2]
-	for i = 1:length(A₁)
-		push!(xx, [A₁.grades[i], A₂.grades[i]])
-		push!(ww, [W₁.grades[i], W₂.grades[i]])
+	num_levels = length(A⃗[1].levels)
+	distance_grades = Vector{Interval}(undef, num_levels)
+	for lvl = 1:num_levels
+		d = Interval(0)
+		for i = 1:length(A⃗)
+			a = A⃗[i][lvl]
+			b = B⃗[i][lvl]
+			d += (a - b) ^ 2
+		end
+		d ^= 1 / 2
+		distance_grades[lvl] = d
 	end
+	FuzzyNumber(A⃗[1].levels, distance_grades)
 end
 
-function d(a::Vector{Interval}, b::Vector{Interval})
+function LFCM_u(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real=1.5)
+	m <= 0 && error("fuzzifier m ∈ (1, ∞)")
+	h = 1 / (1 - m)
 
+	num_levels = length(X⃗[1].levels)
+	C = length(fuzzy_distances)
+	u⃗ = Vector{FuzzyNumber}(undef, C)
+	for i = 1:C
+		membership_grades = Vector{Interval}(undef, num_levels)
+		for lvl = 1:num_levels
+			∑₁ = 0
+			∑₂ = 0
+			for k = 1:C
+				if k == i continue end
+				dⱼₖʰ = fuzzy_distances[k][lvl] ^ h
+				∑₁ += dⱼₖʰ.left
+				∑₂ += dⱼₖʰ.right
+			end
+			dⱼᵢʰ = fuzzy_distances[i][lvl] ^ h
+			u₁ = (dⱼᵢʰ.left) / (dⱼᵢʰ.left + ∑₁)
+			u₂ = (dⱼᵢʰ.right) / (dⱼᵢʰ.right + ∑₂)
+
+			membership_grades[lvl] = Interval(u₁, u₂)
+		end
+		u⃗[i] = FuzzyNumber(X⃗[1].levels, membership_grades)
+	end
+	FuzzyVector(u⃗)
 end

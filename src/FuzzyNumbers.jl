@@ -16,6 +16,7 @@ mutable struct FuzzyNumber <: FuzzySet
     end
 end
 
+Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
 Base.length(A::FuzzyNumber) = length(A.grades)
 Base.getindex(A::FuzzyNumber, lvl::Int64) = A.grades[lvl]
 function (A::FuzzyNumber)(x)
