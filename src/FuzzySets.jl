@@ -16,7 +16,7 @@ include("LFCM.jl")
 export
     Interval, .., mid, rad,
     FuzzySet, support, core, height,
-    FuzzyNumber, FuzzyVector, 
+    FuzzyNumber, SingletonFuzzyNumber, FuzzyVector, 
     peak_at, draw,
     fuzzy_weighted_average
 end

@@ -30,6 +30,18 @@ function (A::FuzzyNumber)(x)
     return mfx
 end
 
+function Base.:(==)(A::FuzzyNumber, B::FuzzyNumber)
+    if A.levels != B.levels
+        return false
+    end
+    for lvl = 1:length(A.levels)
+        if A[lvl] != B[lvl]
+            return false
+        end
+    end
+    return true
+end
+
 function triangle(x::Real; b=0, width=0.5)
     left(α, a, b) = (b - a) * α + a
     right(α, b, c) = c - (c - b) * α
@@ -39,6 +51,10 @@ end
 
 function triangle(levels::Vector{Float64}; b=0, width=0.5)
     return triangle.(levels, b=b, width=width)
+end
+
+function SingletonFuzzyNumber(levels::Vector{Float64}; number::Real=0)
+    return FuzzyNumber(levels, repeat([Interval(number)], length(levels)))
 end
 
 function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black")

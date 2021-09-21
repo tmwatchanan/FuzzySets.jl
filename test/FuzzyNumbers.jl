@@ -20,3 +20,11 @@ B = FuzzyNumber(levels, number=5.0, width=0.5)
 @test support(B) == Interval(4.5, 5.5)
 @test core(B) == Interval(5.0)
 @test height(B) == 1
+
+C = FuzzyNumber(levels, number=5.0, width=0.5)
+@test B == C
+@test A != C
+
+D = SingletonFuzzyNumber(levels, number=0)
+@test support(D) == Interval(0)
+@test D.grades == repeat([Interval(0)], length(levels)) # TODO: check with all(...)

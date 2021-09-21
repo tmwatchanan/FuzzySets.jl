@@ -32,7 +32,8 @@ function Base.getindex(a::Interval, index::Int64)
     end
 end
 
-Base.iterate(a::Interval, state=1) = state > 2 ? nothing : (a[state], state+1)
+Base.iterate(a::Interval) = a[1], 2
+Base.iterate(a::Interval, state) = state > 2 ? nothing : (a[state], state+1)
 Base.vec(a::Interval) = [a.left, a.right]
 
 Base.:(==)(a::Interval, b::Interval) = a.left == b.left && a.right == b.right
@@ -75,7 +76,7 @@ function Base.:^(a::Interval, b::Real)
     if b == 2
         if a.left <= 0 && 0 <= a.right
             left = 0
-            right = a.left == 0 ? a.right^2 : a.left^2
+            right = abs(max(a.left, a.right))^2
         elseif a.left^2 <= a.right^2
             left = a.left ^ b
             right = a.right ^ b

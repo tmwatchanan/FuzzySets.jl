@@ -7,6 +7,18 @@ Base.getindex(FV::FuzzyVector, i::Int64) = FV.numbers[i]
 Base.show(io::IO, FV::FuzzyVector) = println(io, "fuzzy vector length $(length(FV))")
 Base.iterate(FV::FuzzyVector, state=1) = state > length(FV.numbers) ? nothing : FV.numbers[state]
 
+function Base.:(==)(A⃗::FuzzyVector, B⃗::FuzzyVector)
+    if length(A⃗) != length(B⃗)
+        return false
+    end
+    for i = 1:length(A⃗)
+        if A⃗[i] != B⃗[i]
+            return false
+        end
+    end
+    return true
+end
+
 function Base.:∪(FV::FuzzyVector, vec::Vector{FuzzyNumber})
    append!(FV.numbers, vec)
    return FV

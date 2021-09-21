@@ -23,3 +23,7 @@ B⃗ = B⃗ ∪ [B₂]
 @test length(B⃗) == 2
 @test B⃗[1] == B₁
 @test B⃗[2] == B₂
+
+@test A⃗ == A⃗
+@test A⃗ == FuzzyVector([A₁, A₂])
+@test B⃗ != FuzzyVector([A₁, A₂])
