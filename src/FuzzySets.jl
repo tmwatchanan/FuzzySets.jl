@@ -17,6 +17,6 @@ export
     Interval, .., mid, rad,
     FuzzySet, support, core, height,
     FuzzyNumber, SingletonFuzzyNumber, FuzzyVector, 
-    peak_at, draw,
+    peak, draw,
     fuzzy_weighted_average
 end

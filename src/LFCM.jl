@@ -1,3 +1,77 @@
+function get_endpoints(N)
+	inners = 2 .^ collect(0:N-1)
+	outers = reverse(inners)
+	combs = Float64[]
+	for (inner, outer) in zip(inners, outers)
+		endpoints = [1, 2]
+		c = repeat(endpoints, inner=inner, outer=outer)
+		if Base.isempty(combs)
+			combs = c
+		else
+			combs = hcat(combs, c)
+		end
+	end
+	return combs
+end
+
+function u_dsw(X⃗::FuzzyVector, i::Int64, prototypes::Vector{FuzzyVector}; m::Real=1.5)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	h = 1 / (1 - m)
+	levels = X⃗[1].levels
+	num_levels = length(levels)
+	c = length(prototypes)
+	p = length(X⃗)
+
+	grades = Vector{Interval}(undef, num_levels)
+	for lvl = 1:num_levels
+		C⃗ᵢ = prototypes[i]
+		D = Dict()
+		D["X"] = []
+		D["C"] = []
+		for i = 1:p
+			push!(D["X"], X⃗[i][lvl])
+			push!(D["C"], C⃗ᵢ[i][lvl])
+		end
+		for k = 1:c
+			D["C$k"] = []
+			C⃗ₖ = prototypes[k]
+			for i = 1:p
+				push!(D["C$k"], C⃗ₖ[i][lvl])
+			end
+		end
+
+		N = (c + 1) * p
+		Npoints = get_endpoints(N)
+
+		u_list = Vector{Float64}(undef, size(Npoints)[1])
+		for (n_idx, endpoint) in enumerate(eachrow(Npoints))
+			dⱼᵢ = 0
+			for i = 1:p
+				c_i = length(D["X"])*i + p
+				dⱼᵢ += (D["X"][i][endpoint[i]] - D["C"][i][endpoint[c_i]])^2
+			end
+			dⱼᵢ ^= 0.5
+			dⱼᵢ ^= h
+
+			∑ = 0
+			for k = 1:c
+				dⱼₖ = 0
+				for i = 1:p
+					c_i = length(D["X"])*k + p
+					dⱼₖ += (D["X"][i][endpoint[i]] - D["C$k"][i][endpoint[c_i]])^2
+				end
+				∑ += (dⱼₖ ^ 0.5) ^ h
+			end
+			u = ∑ == 0 ? nothing : dⱼᵢ / ∑
+			u_list[n_idx] = u
+		end
+		grades[lvl] = Interval(minimum(u_list), maximum(u_list))
+	end
+	FuzzyNumber(levels, grades)
+
+	# TODO: check edge cases, i.e., d(X⃗ⱼ, C⃗ᵢ) = 0
+end
+
 function d(A⃗::FuzzyVector, B⃗::FuzzyVector; width::Real=0.5)
 	if A⃗ == B⃗
 		𝟎 = SingletonFuzzyNumber(A⃗[1].levels, number=0)
