@@ -72,6 +72,47 @@ function u_dsw(X⃗::FuzzyVector, i::Int64, prototypes::Vector{FuzzyVector}; m::
 	# TODO: check edge cases, i.e., d(X⃗ⱼ, C⃗ᵢ) = 0
 end
 
+function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	levels = X[1][1].levels
+	num_levels = length(levels)
+	N, c = size(u)
+	p = length(X[1])
+
+	C = Vector{FuzzyVector}(undef, c)
+	for i = 1:c
+		C⃗ = Vector{FuzzyNumber}(undef, p)
+		for j = 1:p
+			grades = Vector{Interval}(undef, num_levels)
+			for lvl = 1:num_levels
+				num_endpoints = N + N
+				Npoints = get_endpoints(num_endpoints)
+
+				Cᵢⱼα_list = Vector{Float64}(undef, size(Npoints)[1])
+				for (n_idx, endpoint) in enumerate(eachrow(Npoints))
+					numerator = 0
+					for k = 1:N
+						u_i = N + k
+						numerator += X[k][j][lvl][endpoint[k]]^m * u[k, i][lvl][endpoint[u_i]]
+					end
+
+					∑ = 0
+					for k = 1:N
+						u_i = N + k
+						∑ += u[k, i][lvl][endpoint[u_i]]
+					end
+					cᵢⱼ = ∑ == 0 ? nothing : numerator / ∑
+					Cᵢⱼα_list[n_idx] = cᵢⱼ
+				end
+				grades[lvl] = Interval(minimum(Cᵢⱼα_list), maximum(Cᵢⱼα_list))
+			end
+			C⃗[j] = FuzzyNumber(levels, grades)
+		end
+		C[i] = FuzzyVector(C⃗)
+	end
+	C
+end
+
 function d(A⃗::FuzzyVector, B⃗::FuzzyVector; width::Real=0.5)
 	if A⃗ == B⃗
 		𝟎 = SingletonFuzzyNumber(A⃗[1].levels, number=0)
