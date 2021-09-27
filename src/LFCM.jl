@@ -14,6 +14,8 @@ function get_endpoints(N)
 	return combs
 end
 
+sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
+
 function u_dsw(X⃗::FuzzyVector, i::Int64, prototypes::Vector{FuzzyVector}; m::Real=1.5)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	h = 1 / (1 - m)
@@ -86,25 +88,27 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 			grades = Vector{Interval}(undef, num_levels)
 			for lvl = 1:num_levels
 				num_endpoints = N + N
-				Npoints = get_endpoints(num_endpoints)
 
-				Cᵢⱼα_list = Vector{Float64}(undef, size(Npoints)[1])
-				for (n_idx, endpoint) in enumerate(eachrow(Npoints))
+				Cᵢⱼα_min = Inf
+				Cᵢⱼα_max = -Inf
+				for idx_endpoint = 1:2^num_endpoints
+					endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
 					numerator = 0
 					for k = 1:N
 						u_i = N + k
-						numerator += X[k][j][lvl][endpoint[k]]^m * u[k, i][lvl][endpoint[u_i]]
+						numerator += u[k, i][lvl][endpoints[u_i]]^m * X[k][j][lvl][endpoints[k]]
 					end
 
 					∑ = 0
 					for k = 1:N
 						u_i = N + k
-						∑ += u[k, i][lvl][endpoint[u_i]]
+						∑ += u[k, i][lvl][endpoints[u_i]]
 					end
 					cᵢⱼ = ∑ == 0 ? nothing : numerator / ∑
-					Cᵢⱼα_list[n_idx] = cᵢⱼ
+					Cᵢⱼα_min = min(Cᵢⱼα_min, cᵢⱼ)
+					Cᵢⱼα_max = max(Cᵢⱼα_max, cᵢⱼ)
 				end
-				grades[lvl] = Interval(minimum(Cᵢⱼα_list), maximum(Cᵢⱼα_list))
+				grades[lvl] = Interval(Cᵢⱼα_min, Cᵢⱼα_max)
 			end
 			C⃗[j] = FuzzyNumber(levels, grades)
 		end
