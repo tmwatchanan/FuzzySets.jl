@@ -89,9 +89,9 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 			for lvl = 1:num_levels
 				num_endpoints = N + N
 
-				Cᵢⱼα_min = Inf
-				Cᵢⱼα_max = -Inf
-				for idx_endpoint = 1:2^num_endpoints
+				c_min = Inf
+				c_max = -Inf
+				@floop for idx_endpoint = 1:2^num_endpoints
 					endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
 					numerator = 0
 					for k = 1:N
@@ -105,10 +105,18 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 						∑ += u[k, i][lvl][endpoints[u_i]]
 					end
 					cᵢⱼ = ∑ == 0 ? nothing : numerator / ∑
-					Cᵢⱼα_min = min(Cᵢⱼα_min, cᵢⱼ)
-					Cᵢⱼα_max = max(Cᵢⱼα_max, cᵢⱼ)
+					@reduce() do (c_min; cᵢⱼ)
+						if cᵢⱼ < c_min
+							c_min = cᵢⱼ
+						end
+					end
+					@reduce() do (c_max; cᵢⱼ)
+						if cᵢⱼ > c_max
+							c_max = cᵢⱼ
+						end
+					end
 				end
-				grades[lvl] = Interval(Cᵢⱼα_min, Cᵢⱼα_max)
+				grades[lvl] = Interval(c_min, c_max)
 			end
 			C⃗[j] = FuzzyNumber(levels, grades)
 		end
