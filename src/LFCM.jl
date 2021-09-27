@@ -16,7 +16,62 @@ end
 
 sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
 
-function u_dsw(X⃗::FuzzyVector, i::Int64, prototypes::Vector{FuzzyVector}; m::Real=1.5)
+function d_interval(X⃗::FuzzyVector, Y⃗::FuzzyVector)
+	levels = X⃗[1].levels
+	num_levels = length(levels)
+	p = length(X⃗)
+
+	grades = Vector{Interval}(undef, num_levels)
+	for lvl = 1:num_levels
+		d_left = 0
+		d_right = 0
+		for i = 1:p
+			d_left += (X⃗[i][lvl][1] - Y⃗[i][lvl][2])^2
+			d_right += (X⃗[i][lvl][2] - Y⃗[i][lvl][1])^2
+		end
+		d_left ^= 0.5
+		d_right ^= 0.5
+		grades[lvl] = Interval(d_left, d_right)
+	end
+	d = FuzzyNumber(levels, grades)
+	d
+end
+
+
+function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
+	levels = X⃗[1].levels
+	num_levels = length(levels)
+	p = length(X⃗)
+
+	if X⃗ == Y⃗
+		d = SingletonFuzzyNumber(levels, number=0)
+	else
+		grades = Vector{Interval}(undef, num_levels)
+		for lvl = 1:num_levels
+			num_endpoints = 2 * p
+
+			d_min = Inf
+			d_max = -Inf
+			for idx_endpoint = 1:2^num_endpoints
+				endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+				dⱼᵢ = 0
+				for i = 1:p
+					dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - Y⃗[i][lvl][endpoints[p + i]])^2
+				end
+				dⱼᵢ ^= 0.5
+
+				d_min = min(d_min, dⱼᵢ)
+				d_max = max(d_max, dⱼᵢ)
+			end
+			grades[lvl] = Interval(d_min, d_max)
+		end
+		d = FuzzyNumber(levels, grades)
+	end
+	d
+end
+
+
+function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=1.5)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	h = 1 / (1 - m)
 	levels = X⃗[1].levels
@@ -24,54 +79,56 @@ function u_dsw(X⃗::FuzzyVector, i::Int64, prototypes::Vector{FuzzyVector}; m::
 	c = length(prototypes)
 	p = length(X⃗)
 
-	grades = Vector{Interval}(undef, num_levels)
-	for lvl = 1:num_levels
-		C⃗ᵢ = prototypes[i]
-		D = Dict()
-		D["X"] = []
-		D["C"] = []
-		for i = 1:p
-			push!(D["X"], X⃗[i][lvl])
-			push!(D["C"], C⃗ᵢ[i][lvl])
-		end
-		for k = 1:c
-			D["C$k"] = []
-			C⃗ₖ = prototypes[k]
-			for i = 1:p
-				push!(D["C$k"], C⃗ₖ[i][lvl])
-			end
-		end
+	Iⱼ = [i for i = 1:c if X⃗ == prototypes[i]]
+	uⱼ = Vector{FuzzyNumber}(undef, c)
+	if isempty(Iⱼ) # Iⱼ = ∅
+		for i = 1:c
+			C⃗ᵢ = prototypes[i]
+			grades = Vector{Interval}(undef, num_levels)
+			for lvl = 1:num_levels
+				num_endpoints = (c + 1) * p
 
-		N = (c + 1) * p
-		Npoints = get_endpoints(N)
+				u_min = Inf
+				u_max = -Inf
+				for idx_endpoint = 1:2^num_endpoints
+					endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
 
-		u_list = Vector{Float64}(undef, size(Npoints)[1])
-		for (n_idx, endpoint) in enumerate(eachrow(Npoints))
-			dⱼᵢ = 0
-			for i = 1:p
-				c_i = length(D["X"])*i + p
-				dⱼᵢ += (D["X"][i][endpoint[i]] - D["C"][i][endpoint[c_i]])^2
-			end
-			dⱼᵢ ^= 0.5
-			dⱼᵢ ^= h
+					dⱼᵢ = 0
+					for i = 1:p
+						c_i = p*i + p
+						dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - C⃗ᵢ[i][lvl][endpoints[c_i]])^2
+					end
+					dⱼᵢ ^= 0.5
+					dⱼᵢ ^= h
 
-			∑ = 0
-			for k = 1:c
-				dⱼₖ = 0
-				for i = 1:p
-					c_i = length(D["X"])*k + p
-					dⱼₖ += (D["X"][i][endpoint[i]] - D["C$k"][i][endpoint[c_i]])^2
+					∑ = 0
+					for k = 1:c
+						C⃗ₖ = prototypes[k]
+						dⱼₖ = 0
+						for i = 1:p
+							c_i = p*k + p
+							dⱼₖ += (X⃗[i][lvl][endpoints[i]] - C⃗ₖ[i][lvl][endpoints[c_i]])^2
+						end
+						∑ += (dⱼₖ ^ 0.5) ^ h
+					end
+					u = ∑ == 0 ? nothing : dⱼᵢ / ∑
+					u_min = min(u_min, u)
+					u_max = max(u_max, u)
 				end
-				∑ += (dⱼₖ ^ 0.5) ^ h
+				grades[lvl] = Interval(u_min, u_max)
 			end
-			u = ∑ == 0 ? nothing : dⱼᵢ / ∑
-			u_list[n_idx] = u
+			uⱼ[i] = FuzzyNumber(levels, grades)
 		end
-		grades[lvl] = Interval(minimum(u_list), maximum(u_list))
+	else # Iⱼ ≠ ∅
+		for i = 1:c
+			if i ∉ Iⱼ
+				uⱼ[i] = SingletonFuzzyNumber(levels, number=0)
+			else
+				uⱼ[i] = SingletonFuzzyNumber(levels, number=1 / length(Iⱼ))
+			end
+		end
 	end
-	FuzzyNumber(levels, grades)
-
-	# TODO: check edge cases, i.e., d(X⃗ⱼ, C⃗ᵢ) = 0
+	uⱼ
 end
 
 function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
