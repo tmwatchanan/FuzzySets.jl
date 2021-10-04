@@ -1,4 +1,4 @@
-import Plots: current, plot, plot!, vline!, annotate!
+import Plots: current, plot, plot!, vline!, annotate!, scatter!
 
 mutable struct FuzzyNumber <: FuzzySet
     levels::Vector{Float64}
@@ -74,16 +74,23 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
     # draw level cuts
 	for i = 1:length(fuzzynumber.levels)
 		lvl = fuzzynumber.levels[i]
-		plot!(fig, vec(fuzzynumber[i]), [lvl, lvl], linecolor=linecolor, legend=false)
+        interval = fuzzynumber[i]
+        if interval.left == interval.right
+            scatter!(fig, [interval.left], [lvl], c=linecolor, marker=1, legend=false)
+        else
+            plot!(fig, vec(interval), [lvl, lvl], linecolor=linecolor, legend=false)
+        end
+        # break
 	end
     # points = [Point2f0(fuzzynumber.grades[i][1], fuzzynumber.levels[i]) => Point2f0(fuzzynumber.grades[i][2], fuzzynumber.levels[i]) for i = 1:length(fuzzynumber.levels)]
     # linesegments(points, color = :red, linewidth = 2)
 
     # marking peak
     xₘ = peak(fuzzynumber)
-    vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
+    # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     μ = fuzzynumber(xₘ)
     annotate!(fig, [(xₘ, μ, (μ, 8, :black, :left))])
+
     current()
     return fig
 end
