@@ -43,7 +43,7 @@ Base.:≈(a::Interval, b::Interval) = a.left ≈ b.left && a.right ≈ b.right
 Base.isempty(a::Interval) = isnan(a.left) || isnan(a.right)
 
 mid(a::Interval) = (a.left + a.right) / 2
-rad(a::Interval) = (a.left - a.right) / 2
+rad(a::Interval) = (a.right - a.left) / 2
 mag(a::Interval) = max(abs(a.left), abs(a.right))
 mig(a::Interval) = min(abs(a.left), abs(a.right))
 abs(a::Interval) = Interval(mig(a), mag(a))
