@@ -16,28 +16,6 @@ end
 
 sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
 
-function d_interval(X⃗::FuzzyVector, Y⃗::FuzzyVector)
-	levels = X⃗[1].levels
-	num_levels = length(levels)
-	p = length(X⃗)
-
-	grades = Vector{Interval}(undef, num_levels)
-	for lvl = 1:num_levels
-		d_left = 0
-		d_right = 0
-		for i = 1:p
-			d_left += (X⃗[i][lvl][1] - Y⃗[i][lvl][2])^2
-			d_right += (X⃗[i][lvl][2] - Y⃗[i][lvl][1])^2
-		end
-		d_left ^= 0.5
-		d_right ^= 0.5
-		grades[lvl] = Interval(d_left, d_right)
-	end
-	d = FuzzyNumber(levels, grades)
-	d
-end
-
-
 function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
 	levels = X⃗[1].levels
 	num_levels = length(levels)
@@ -99,7 +77,9 @@ function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=1.5)
 						dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - C⃗ᵢ[i][lvl][endpoints[c_i]])^2
 					end
 					dⱼᵢ ^= 0.5
-					dⱼᵢ ^= h
+					if dⱼᵢ != 0
+						dⱼᵢ ^= h
+					end
 
 					∑ = 0
 					for k = 1:c
@@ -109,7 +89,11 @@ function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=1.5)
 							c_i = p*k + p
 							dⱼₖ += (X⃗[i][lvl][endpoints[i]] - C⃗ₖ[i][lvl][endpoints[c_i]])^2
 						end
-						∑ += (dⱼₖ ^ 0.5) ^ h
+						dⱼₖ ^= 0.5
+						if dⱼₖ != 0
+							dⱼₖ ^= h
+						end
+						∑ += dⱼₖ
 					end
 					u = ∑ == 0 ? nothing : dⱼᵢ / ∑
 					u_min = min(u_min, u)
@@ -182,29 +166,32 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 	C
 end
 
-function d(A⃗::FuzzyVector, B⃗::FuzzyVector; width::Real=0.5)
+function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector)
 	if A⃗ == B⃗
 		𝟎 = SingletonFuzzyNumber(A⃗[1].levels, number=0)
 		return 𝟎
 	elseif length(A⃗) ≠ length(B⃗)
 		return false
 	end
-	num_levels = length(A⃗[1].levels)
+
+	p = length(A⃗)
+	levels = A⃗[1].levels
+	num_levels = length(levels)
 	distance_grades = Vector{Interval}(undef, num_levels)
 	for lvl = 1:num_levels
 		d = Interval(0)
-		for i = 1:length(A⃗)
+		for i = 1:p
 			a = A⃗[i][lvl]
 			b = B⃗[i][lvl]
-			d += (a - b) ^ 2
+			d += ((a - b) ^ 2)
 		end
-		d ^= 1 / 2
+		d ^= 0.5
 		distance_grades[lvl] = d
 	end
-	FuzzyNumber(A⃗[1].levels, distance_grades)
+	FuzzyNumber(levels, distance_grades)
 end
 
-function LFCM_u(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real=1.5)
+function u_interval(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real=1.5)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	h = 1 / (1 - m)
 	c = length(fuzzy_distances)
@@ -224,19 +211,12 @@ function LFCM_u(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real
 		for i = 1:c
 			membership_grades = Vector{Interval}(undef, num_levels)
 			for lvl = 1:num_levels
-				∑₁ = 0
-				∑₂ = 0
-				for k = 1:c
-					if k == i continue end
-					dⱼₖʰ = fuzzy_distances[k][lvl] ^ h
-					∑₁ += dⱼₖʰ.left
-					∑₂ += dⱼₖʰ.right
-				end
 				dⱼᵢʰ = fuzzy_distances[i][lvl] ^ h
-				u₁ = (dⱼᵢʰ.left) / (dⱼᵢʰ.left + ∑₁)
-				u₂ = (dⱼᵢʰ.right) / (dⱼᵢʰ.right + ∑₂)
-
-				membership_grades[lvl] = Interval(u₁, u₂)
+				∑dⱼₖʰ = Interval(0)
+				for k = 1:c
+					∑dⱼₖʰ += fuzzy_distances[k][lvl] ^ h
+				end
+				membership_grades[lvl] = dⱼᵢʰ / ∑dⱼₖʰ
 			end
 			u⃗[i] = FuzzyNumber(levels, membership_grades)
 		end
@@ -254,23 +234,27 @@ function LFCM_u(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real
 	u⃗
 end
 
-function update_prototype(patterns::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=1.5)
+function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=1.5)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
-	num_levels = length(patterns[1][1].levels)
-	N = length(patterns)
+	levels = X⃗[1][1].levels
+	num_levels = length(levels)
+	N = length(X⃗)
+	p = length(X⃗[1])
 
-	for j = 1:length(patterns[1]) # each dimension j
+	C⃗ = Vector{FuzzyNumber}(undef, p)
+	for j = 1:p # each dimension j
 		membership_grades = Vector{Interval}(undef, num_levels)
 		for lvl = 1:num_levels
 			sum_numerator = Interval(0)
+			sum_denominator = Interval(0)
 			for k = 1:N
-				println("u ", u[k][lvl])
-				sum_numerator += (u[k][lvl])^2
+				sum_numerator += (u[k][lvl]^m * X⃗[k][j][lvl])
+				sum_denominator += u[k][lvl]^m
 			end
-			membership_grades[lvl] = Interval()
+			membership_grades[lvl] = sum_numerator / sum_denominator
 		end
+		C⃗[j] = FuzzyNumber(levels, membership_grades)
 	end
-
-	C⃗ = FuzzyVector([])
+	C⃗ = FuzzyVector(C⃗)
 	C⃗
 end

@@ -22,7 +22,7 @@ Base.getindex(A::FuzzyNumber, lvl::Int64) = A.grades[lvl]
 function (A::FuzzyNumber)(x)
     mfx = 0.0
     for l = length(A.grades):-1:1
-        if A.grades[l][1] ≤ x && x ≤ A.grades[l][2]
+        if A.grades[l].left ≤ x && x ≤ A.grades[l].right
             mfx = A.levels[l]
             break
         end
@@ -87,9 +87,9 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
 
     # marking peak
     xₘ = peak(fuzzynumber)
-    # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     μ = fuzzynumber(xₘ)
-    annotate!(fig, [(xₘ, μ, (μ, 8, :black, :left))])
+    annotate!(fig, [(xₘ, μ, (round(xₘ, digits=2), 8, :black, :left))])
+    # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
 
     current()
     return fig
