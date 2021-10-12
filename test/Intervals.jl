@@ -29,3 +29,19 @@ for (idx, x) in enumerate(zip(a, b))
     end
 end
 @test first(z) == (a[1], b[1])
+
+# Fuzzy distances
+a = Interval(1.5, 2.5)
+b = Interval(1.5, 2.5)
+@test a - b == Interval(-1.0, 1.0)
+@test (a - b) ^ 2 == Interval(0, 1.0)
+
+a = Interval(0.5, 1.5)
+b = Interval(0.6, 1.6)
+@test a - b == Interval(-1.1, 0.9)
+@test (a - b) ^ 2 ≈ Interval(0, 1.21)
+
+a = Interval(0, 2.21)
+b = Interval(0, 1.48)
+@test a - b == Interval(-1.48, 2.21)
+@test (a - b) ^ 2 == Interval(0, 4.8841)

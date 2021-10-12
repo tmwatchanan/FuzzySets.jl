@@ -1,4 +1,5 @@
 import Base: +, -, *, /, ^, ==, ≈
+import Base.abs
 
 struct Interval
     left::Real
@@ -43,7 +44,10 @@ Base.isempty(a::Interval) = isnan(a.left) || isnan(a.right)
 
 mid(a::Interval) = (a.left + a.right) / 2
 rad(a::Interval) = (a.left - a.right) / 2
-
+mag(a::Interval) = max(abs(a.left), abs(a.right))
+mig(a::Interval) = min(abs(a.left), abs(a.right))
+abs(a::Interval) = Interval(mig(a), mag(a))
+sqr(a::Interval) = a ^ 2
 
 # INTERVAL ARITHMETIC ========================================================
 
@@ -76,7 +80,7 @@ function Base.:^(a::Interval, b::Real)
     if b == 2
         if a.left <= 0 && 0 <= a.right
             left = 0
-            right = abs(max(a.left, a.right))^2
+            right = mag(a)^2
         elseif a.left^2 <= a.right^2
             left = a.left ^ b
             right = a.right ^ b
@@ -84,12 +88,14 @@ function Base.:^(a::Interval, b::Real)
             left = a.right ^ b
             right = a.left ^ b
         end
-    elseif b == 1 / 2
+    elseif b == 0.5
         left = sqrt(a.left)
         right = sqrt(a.right)
     else
         left = a.left ^ b
         right = a.right ^ b
     end
+    left = left == Inf ? 0 : left
+    right = right == Inf ? 0 : right
 	Interval(left, right)
 end
