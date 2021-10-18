@@ -258,3 +258,11 @@ function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=1
 	C⃗ = FuzzyVector(C⃗)
 	C⃗
 end
+
+function clip(A::FuzzyNumber)
+	lvl_02 = Int(floor(length(A.levels) / 5))
+	for lvl = 1:lvl_02
+		A.grades[lvl] = A.grades[lvl_02 + 1]
+	end
+	A
+end
