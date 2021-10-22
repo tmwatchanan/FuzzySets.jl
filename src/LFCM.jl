@@ -166,6 +166,161 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 	C
 end
 
+
+function km_iwa(X, u; bound, m=2.0) # Karnik and Mendel's interval weighted average
+    N = size(X, 1)
+    z = Vector{Real}(undef, N)
+    for k = 1:N
+		if bound == "lower"
+			zₖ = X[k].left
+		elseif bound == "upper"
+			zₖ = X[k].right
+		end
+        z[k] = zₖ
+    end
+    z_sorted = sort(z)
+    sorted_indices = sortperm(z)
+
+    h = Vector{Real}(undef, N)
+    Δ = Vector{Real}(undef, N)
+    for k = 1:N
+        h[k] = mid(u[k])
+        Δ[k] = rad(u[k])
+    end
+    w = copy(h)
+    S′ = sum(w.^m .* z) / sum(w.^m)
+    y = Vector{Real}(undef, N)
+
+    for _ = 1:2
+        _k = 1
+        for k = 1:N
+            if z_sorted[k] <= S′ 
+                _k = k
+                break
+            end
+        end
+
+		left_indices = sorted_indices[1:_k]
+		right_indices = sorted_indices[_k+1:end]
+		if bound == "lower"
+			w[left_indices] = h[left_indices] + Δ[left_indices]
+			w[right_indices] = h[right_indices] - Δ[right_indices]
+		elseif bound == "upper"
+			w[left_indices] = h[left_indices] - Δ[left_indices]
+			w[right_indices] = h[right_indices] + Δ[right_indices]
+		end
+		println("w = $w")
+
+        y[_k] = sum(w.^m .* z) / sum(w.^m)
+        if S′ ≈ y[_k]
+            println("BREAK $S′")
+            break
+        end
+        println("S prime = $(S′)")
+        println("y[$_k] = $(y[_k])")
+        S′ = y[_k]
+    end
+    S′
+end
+
+function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	levels = X[1][1].levels
+	num_levels = length(levels)
+	N, c = size(u)
+	p = length(X[1])
+
+	C = Vector{FuzzyVector}(undef, c)
+	for i = 1:c
+		C⃗ = Vector{FuzzyNumber}(undef, p)
+		for j = 1:p
+			grades = Vector{Interval}(undef, num_levels)
+			for lvl = 1:num_levels
+
+				z = Vector{Real}(undef, N)
+				# h = Vector{Real}(undef, N)
+				for k = 1:N
+					# cₖ = mid(X[k][j][lvl])
+					# rₖ = rad(X[k][j][lvl])
+					# zₖ = cₖ + rₖ
+					zₖ = X[k][j][lvl].right
+					z[k] = zₖ
+					# h[k] = u[k, i][lvl]
+				end
+				z_sorted = sort(z)
+
+				w = Vector{Real}(undef, N)
+				Δ = Vector{Real}(undef, N)
+				for k = 1:N
+					w[k] = mid(u[k, i][lvl]) # = hₖ
+					Δ[k] = rad(u[k, i][lvl])
+				end
+				S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+				S′_prev = copy(S′)
+
+				while true
+					_k = 1
+					for k = 1:N
+						if z_sorted[k] <= S′ 
+							_k = k
+							break
+						end
+					end
+					w[1:_k] -= Δ[1:_k]
+					w[_k+1:end] += Δ[_k+1:end]
+
+					S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+					if S′ ≈ S′_prev
+						break
+					end
+					S′_prev = S′
+				end
+				c_right = copy(S′)
+
+				z = Vector{Real}(undef, N)
+				for k = 1:N
+					zₖ = X[k][j][lvl].left
+					z[k] = zₖ
+				end
+				z_sorted = sort(z)
+
+				w = Vector{Real}(undef, N)
+				Δ = Vector{Real}(undef, N)
+				for k = 1:N
+					w[k] = mid(u[k, i][lvl]) # = hₖ
+					Δ[k] = rad(u[k, i][lvl])
+				end
+				S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+				S′_prev = copy(S′)
+
+				while true
+					_k = 1
+					for k = 1:N
+						if z_sorted[k] <= S′ 
+							_k = k
+							break
+						end
+					end
+					w[1:_k] += Δ[1:_k]
+					w[_k+1:end] -= Δ[_k+1:end]
+
+					S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+					if S′ ≈ S′_prev
+						break
+					end
+					S′_prev = S′
+				end
+				c_left = copy(S′)
+
+				grades[lvl] = Interval(c_left, c_right)
+			end
+			C⃗[j] = FuzzyNumber(levels, grades)
+		end
+		C[i] = FuzzyVector(C⃗)
+	end
+	C
+end
+
 function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector)
 	if A⃗ == B⃗
 		𝟎 = SingletonFuzzyNumber(A⃗[1].levels, number=0)
