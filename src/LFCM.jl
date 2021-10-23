@@ -167,60 +167,59 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 end
 
 
-function km_iwa(X, u; bound, m=2.0) # Karnik and Mendel's interval weighted average
+function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m=2.0) # Karnik and Mendel's interval weighted average
     N = size(X, 1)
-    z = Vector{Real}(undef, N)
+    x = Vector{Real}(undef, N)
     for k = 1:N
 		if bound == "lower"
-			zₖ = X[k].left
+			x[k] = X[k].left # a_i
 		elseif bound == "upper"
-			zₖ = X[k].right
+			x[k] = X[k].right # b_i
+		else
+			throw(ArgumentError("bound must be \"lower\" or \"upper\""))
 		end
-        z[k] = zₖ
     end
-    z_sorted = sort(z)
-    sorted_indices = sortperm(z)
+    x_sorted = sort(x)
+    sorted_indices = sortperm(x)
 
-    h = Vector{Real}(undef, N)
-    Δ = Vector{Real}(undef, N)
+    w = Vector{Real}(undef, N)
+    c = Vector{Real}(undef, N)
+    d = Vector{Real}(undef, N)
     for k = 1:N
-        h[k] = mid(u[k])
-        Δ[k] = rad(u[k])
+        w[k] = mid(u[k])
+        c[k] = u[k].left
+        d[k] = u[k].right
     end
-    w = copy(h)
-    S′ = sum(w.^m .* z) / sum(w.^m)
-    y = Vector{Real}(undef, N)
+    y′ = sum(w.^m .* x) / sum(w.^m)
 
-    for _ = 1:2
+	while true
         _k = 1
-        for k = 1:N
-            if z_sorted[k] <= S′ 
+        for k = 1:N-1
+            if x_sorted[k] <= y′ && y′ <= x_sorted[k+1]
+				println("x_sorted[$k] = $(x_sorted[k]), y′ = $(y′)")
                 _k = k
                 break
             end
+			k = N
         end
 
 		left_indices = sorted_indices[1:_k]
 		right_indices = sorted_indices[_k+1:end]
 		if bound == "lower"
-			w[left_indices] = h[left_indices] + Δ[left_indices]
-			w[right_indices] = h[right_indices] - Δ[right_indices]
+			w[left_indices] = d[left_indices]
+			w[right_indices] = c[right_indices]
 		elseif bound == "upper"
-			w[left_indices] = h[left_indices] - Δ[left_indices]
-			w[right_indices] = h[right_indices] + Δ[right_indices]
+			w[left_indices] = c[left_indices]
+			w[right_indices] = d[right_indices]
 		end
-		println("w = $w")
 
-        y[_k] = sum(w.^m .* z) / sum(w.^m)
-        if S′ ≈ y[_k]
-            println("BREAK $S′")
+        y_k = sum(w.^m .* x) / sum(w.^m)
+        if y′ ≈ y_k
             break
         end
-        println("S prime = $(S′)")
-        println("y[$_k] = $(y[_k])")
-        S′ = y[_k]
+        y′ = y_k
     end
-    S′
+    y′
 end
 
 function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
@@ -247,7 +246,7 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					z[k] = zₖ
 					# h[k] = u[k, i][lvl]
 				end
-				z_sorted = sort(z)
+				x_sorted = sort(z)
 
 				w = Vector{Real}(undef, N)
 				Δ = Vector{Real}(undef, N)
@@ -255,13 +254,13 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					w[k] = mid(u[k, i][lvl]) # = hₖ
 					Δ[k] = rad(u[k, i][lvl])
 				end
-				S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+				S′ = sum(w.^m .* x_sorted) / sum(w.^m)
 				S′_prev = copy(S′)
 
 				while true
 					_k = 1
 					for k = 1:N
-						if z_sorted[k] <= S′ 
+						if x_sorted[k] <= S′ 
 							_k = k
 							break
 						end
@@ -269,7 +268,7 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					w[1:_k] -= Δ[1:_k]
 					w[_k+1:end] += Δ[_k+1:end]
 
-					S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+					S′ = sum(w.^m .* x_sorted) / sum(w.^m)
 					if S′ ≈ S′_prev
 						break
 					end
@@ -282,7 +281,7 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					zₖ = X[k][j][lvl].left
 					z[k] = zₖ
 				end
-				z_sorted = sort(z)
+				x_sorted = sort(z)
 
 				w = Vector{Real}(undef, N)
 				Δ = Vector{Real}(undef, N)
@@ -290,13 +289,13 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					w[k] = mid(u[k, i][lvl]) # = hₖ
 					Δ[k] = rad(u[k, i][lvl])
 				end
-				S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+				S′ = sum(w.^m .* x_sorted) / sum(w.^m)
 				S′_prev = copy(S′)
 
 				while true
 					_k = 1
 					for k = 1:N
-						if z_sorted[k] <= S′ 
+						if x_sorted[k] <= S′ 
 							_k = k
 							break
 						end
@@ -304,7 +303,7 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 					w[1:_k] += Δ[1:_k]
 					w[_k+1:end] -= Δ[_k+1:end]
 
-					S′ = sum(w.^m .* z_sorted) / sum(w.^m)
+					S′ = sum(w.^m .* x_sorted) / sum(w.^m)
 					if S′ ≈ S′_prev
 						break
 					end

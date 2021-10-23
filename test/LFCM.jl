@@ -31,6 +31,7 @@ u = [Interval(0, 0.4), Interval(0.6, 1)]
 m = 2.0
 @test round(FuzzySets.km_iwa(X, u, bound="lower", m=m), digits=2) == 1.69
 @test round(FuzzySets.km_iwa(X, u, bound="upper", m=m), digits=2) == 3.31
+@test_throws ArgumentError FuzzySets.km_iwa(X, u, bound="something", m=2.0)
 
 # Test cases from "Uncertain Rule-Based Fuzzy Systems Introduction and New Directions" by Jerry M. Mendel
 X = [Interval(1), Interval(2), Interval(3), Interval(4), Interval(5)]
