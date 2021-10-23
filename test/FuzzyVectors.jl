@@ -27,3 +27,14 @@ B⃗ = B⃗ ∪ [B₂]
 @test A⃗ == A⃗
 @test A⃗ == FuzzyVector([A₁, A₂])
 @test B⃗ != FuzzyVector([A₁, A₂])
+
+@test cut(A⃗, 0) == [Interval(0.5, 1.5), Interval(1.5, 2.5)]
+@test cut(A⃗, 1) == [Interval(1), Interval(2)]
+
+C₁ = FuzzyNumber(levels, number=-1)
+C₂ = FuzzyNumber(levels, number=3)
+C⃗ = FuzzyVector([C₁, C₂])
+
+patterns = [A⃗, C⃗]
+@test cut(patterns, 1, 1) == [Interval(1), Interval(-1)]
+@test cut(patterns, 2, 1) == [Interval(2), Interval(3)]

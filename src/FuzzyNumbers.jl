@@ -17,18 +17,6 @@ mutable struct FuzzyNumber <: FuzzySet
 end
 
 Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
-Base.length(A::FuzzyNumber) = length(A.grades)
-Base.getindex(A::FuzzyNumber, lvl::Int64) = A.grades[lvl]
-function (A::FuzzyNumber)(x)
-    mfx = 0.0
-    for l = length(A.grades):-1:1
-        if A.grades[l].left ≤ x && x ≤ A.grades[l].right
-            mfx = A.levels[l]
-            break
-        end
-    end
-    return mfx
-end
 
 function Base.:(==)(A::FuzzyNumber, B::FuzzyNumber)
     if A.levels != B.levels

@@ -1,5 +1,19 @@
 abstract type FuzzySet end
 
+Base.length(A::FuzzySet) = length(A.grades)
+Base.getindex(A::FuzzySet, lvl::Int64) = A.grades[lvl]
+function (A::FuzzySet)(x)
+    mfx = 0.0
+    for l = length(A.grades):-1:1
+        if A.grades[l].left ≤ x && x ≤ A.grades[l].right
+            mfx = A.levels[l]
+            break
+        end
+    end
+    return mfx
+end
+
+cut(A::FuzzySet, α::Real) = A.grades[findfirst(x -> x == α, A.levels)]
 support(A::FuzzySet) = A.grades[1]
 core(A::FuzzySet) = A.grades[end]
 function height(A::FuzzySet)
