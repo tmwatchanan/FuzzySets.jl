@@ -11,11 +11,11 @@ B₂ = FuzzyNumber(levels, number=0)
 A⃗ = FuzzyVector([A₁, A₂])
 B⃗ = FuzzyVector([B₁])
 
-@test FuzzySets.d(A⃗, A⃗) == FuzzyNumber(levels, number=0)
-@test FuzzySets.d(A⃗, B⃗) == false
+@test FuzzySets.d_dsw(A⃗, A⃗) == SingletonFuzzyNumber(levels, number=0)
+@test FuzzySets.d_dsw(A⃗, B⃗) == false
 
-a = Interval(-0.5, 0.5)
-b = Interval(7.5, 8.5)
+@test FuzzySets.d_interval(A⃗, A⃗) == SingletonFuzzyNumber(levels, number=0)
+@test FuzzySets.d_interval(A⃗, B⃗) == false
 
 
 A = FuzzyNumber(levels, number=1, width=0.5)
