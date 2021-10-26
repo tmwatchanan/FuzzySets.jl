@@ -60,27 +60,46 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001, colormap=:jet1)
     # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
 end
 
-function draw2d(FV::FuzzyVector; step=0.01, fig=nothing, c=:jet1, alpha=nothing) # TODO:
+function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker::Symbol=nothing, peak_text::Bool=false)
 	A₁ = FV[1]
 	A₂ = FV[2]
-	x1 = max(A₁.grades[1][1], -3.5)
-	x2 = min(A₁.grades[1][2], 3.5)
-	y1 = x1
-	y2 = x2
-	# y1 = max(A₂.grades[1][1], -3.5)
-	# y2 = min(A₂.grades[1][2], 3.5)
-	println("($(A₁.grades[1][1]), -4) -> ($(A₁.grades[1][2]), 4) = $x1 -> $x2")
-	println("($(A₂.grades[1][1]), -4) -> ($(A₂.grades[1][2]), 4) = $y1 -> $y2")
+	x1 = max(A₁.grades[1].left, -3.5)
+	x2 = min(A₁.grades[1].right, 3.5)
+	y1 = max(A₂.grades[1].left, -3.5)
+	y2 = min(A₂.grades[1].right, 3.5)
 	X = collect(x1:step:x2)
 	Y = collect(y1:step:y2)
-	println("X $(size(X))")
-	println("Y $(size(Y))")
-	Z = [min(A₁(x), A₂(y)) for x in X, y in Y]
-	println("Z $(size(Z))")
+	f(x, y) = min(A₁(x), A₂(y))
 	if isnothing(fig)
-		fig = Plots.contour(X, Y, Z, fill=true, c=c, aspect_ratio=1.0, seriesalpha=alpha)
+		fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true, dpi=600)
 	else
-		fig = Plots.contour!(fig, X, Y, Z, fill=true, c=c, aspect_ratio=1.0, seriesalpha=alpha)
+		fig = Plots.contour!(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true, dpi=600)
 	end
+
+	# plot peak
+	Z = [f(x, y) for x in X, y in Y]
+	max_indices = argmax(Z)
+	max_x = X[max_indices[1]]
+	max_y = Y[max_indices[2]]
+	if !isnothing(marker)
+		fig = Plots.scatter!(fig, (max_x, max_y), legend=false, m=marker)
+	end
+	if peak_text
+		fig = Plots.annotate!(fig, [(max_x, max_y, ("$(round(max_x, digits=2)), $(round(max_y, digits=2))", 8, :black, :center))])
+	end
+
 	fig
+end
+
+function draw2d_makie(ax::Axis, FV::FuzzyVector; step=0.01, colormap=:jet1, alpha=nothing)
+	A₁ = FV[1]
+	A₂ = FV[2]
+	x1 = max(A₁.grades[1].left, -3.5)
+	x2 = min(A₁.grades[1].right, 3.5)
+	y1 = max(A₂.grades[1].left, -3.5)
+	y2 = min(A₂.grades[1].right, 3.5)
+	X = collect(x1:step:x2)
+	Y = collect(y1:step:y2)
+	Z = [min(A₁(x), A₂(y)) for x in X, y in Y]
+	contour!(ax, X, Y, Z, colormap=colormap)#, alpha=alpha)
 end
