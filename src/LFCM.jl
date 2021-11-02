@@ -50,58 +50,21 @@ function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
 	d
 end
 
-
-function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=1.5)
+function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
-	h = 1 / (1 - m)
 	levels = X⃗[1].levels
 	num_levels = length(levels)
 	c = length(prototypes)
-	p = length(X⃗)
 
 	Iⱼ = [i for i = 1:c if X⃗ == prototypes[i]]
 	uⱼ = Vector{FuzzyNumber}(undef, c)
 	if isempty(Iⱼ) # Iⱼ = ∅
 		for i = 1:c
-			C⃗ᵢ = prototypes[i]
 			grades = Vector{Interval}(undef, num_levels)
-			for lvl = 1:num_levels
-				num_endpoints = (c + 1) * p
-
-				u_min = Inf
-				u_max = -Inf
-				for idx_endpoint = 1:2^num_endpoints
-					endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
-
-					dⱼᵢ = 0
-					for i = 1:p
-						c_i = p*i + p
-						dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - C⃗ᵢ[i][lvl][endpoints[c_i]])^2
-					end
-					dⱼᵢ ^= 0.5
-					if dⱼᵢ != 0
-						dⱼᵢ ^= h
-					end
-
-					∑ = 0
-					for k = 1:c
-						C⃗ₖ = prototypes[k]
-						dⱼₖ = 0
-						for i = 1:p
-							c_i = p*k + p
-							dⱼₖ += (X⃗[i][lvl][endpoints[i]] - C⃗ₖ[i][lvl][endpoints[c_i]])^2
-						end
-						dⱼₖ ^= 0.5
-						if dⱼₖ != 0
-							dⱼₖ ^= h
-						end
-						∑ += dⱼₖ
-					end
-					u = ∑ == 0 ? nothing : dⱼᵢ / ∑
-					u_min = min(u_min, u)
-					u_max = max(u_max, u)
-				end
-				grades[lvl] = Interval(u_min, u_max)
+			for (lvl, α) in enumerate(levels)
+				X_cut = cut(X⃗, α)
+				C_cut = cut(prototypes,  α)
+				grades[lvl] = u_dsw(X_cut, C_cut, i, m=m)
 			end
 			uⱼ[i] = FuzzyNumber(levels, grades)
 		end
@@ -115,6 +78,51 @@ function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=1.5)
 		end
 	end
 	uⱼ
+end
+
+function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::Int; m::Real=2.0)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	h = 1 / (1 - m)
+	c = length(prototypes)
+	p = length(X⃗)
+
+	C⃗ᵢ = prototypes[i]
+	num_endpoints = (c + 1) * p
+
+	u_min = Inf
+	u_max = -Inf
+	for idx_endpoint = 1:2^num_endpoints
+		endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+
+		dⱼᵢ = 0
+		for j = 1:p
+			c_idx = p + (i-1)*p + j
+			dⱼᵢ += (X⃗[j][endpoints[j]] - C⃗ᵢ[j][endpoints[c_idx]])^2
+		end
+		# dⱼᵢ ^= 0.5
+		if dⱼᵢ != 0
+			dⱼᵢ ^= h
+		end
+
+		∑ = 0
+		for k = 1:c
+			C⃗ₖ = prototypes[k]
+			dⱼₖ = 0
+			for j = 1:p
+				c_idx = p + (k-1)*p + j
+				dⱼₖ += (X⃗[j][endpoints[j]] - C⃗ₖ[j][endpoints[c_idx]])^2
+			end
+			# dⱼₖ ^= 0.5
+			if dⱼₖ != 0
+				dⱼₖ ^= h
+			end
+			∑ += dⱼₖ
+		end
+		u = ∑ == 0 ? nothing : dⱼᵢ / ∑
+		u_min = min(u_min, u)
+		u_max = max(u_max, u)
+	end
+	Interval(u_min, u_max)
 end
 
 function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
@@ -217,6 +225,8 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
         y_k = sum(w.^m .* x) / sum(w.^m)
         if y′ ≈ y_k
             break
+		else
+			println("$y′ is not equal to $y_k")
         end
         y′ = y_k
     end

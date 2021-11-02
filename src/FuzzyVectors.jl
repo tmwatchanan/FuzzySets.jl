@@ -42,6 +42,16 @@ function cut(X::Vector{FuzzyVector}, p::Int, α::Real)
 	cuts
 end
 
+function cut(X::Vector{FuzzyVector}, α::Real)
+	N = length(X)
+	p = length(X[1])
+	cuts = Vector{Vector{Interval}}(undef, N)
+	for i = 1:N
+		cuts[i] = [cut(X[i][j], α) for j = 1:p]
+	end
+	cuts
+end
+
 function draw(ax::Axis3, FV::FuzzyVector; step=0.001, colormap=:jet1)
 	A₁ = FV[1]
 	A₂ = FV[2]
