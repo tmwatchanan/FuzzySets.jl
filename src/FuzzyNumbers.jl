@@ -17,6 +17,7 @@ mutable struct FuzzyNumber <: FuzzySet
 end
 
 Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
+Base.copy(A::FuzzyNumber) = FuzzyNumber(copy(A.levels), copy(A.grades))
 
 function Base.:(==)(A::FuzzyNumber, B::FuzzyNumber)
     if A.levels != B.levels
@@ -92,3 +93,35 @@ Base.:*(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (*).(A.grades, B
 Base.:/(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (/).(A.grades, B.grades))
 Base.:*(a::Real, A::FuzzyNumber) = FuzzyNumber(A.levels, (*).(a, A.grades))
 Base.:*(A::FuzzyNumber, a::Real) = a * A
+
+# =============================================================================
+
+function clip(A::FuzzyNumber, α::Real=0.2)
+    B = copy(A)
+    clip!(B, α)
+end
+
+function clip!(A::FuzzyNumber, α::Real=0.2)
+	_lvl = Int(floor(length(A.levels) / (1 / α)))
+	for lvl = 1:_lvl
+		A.grades[lvl] = A.grades[_lvl + 1]
+	end
+end
+
+function clip(A::FuzzyNumber, left::Real, right::Real)
+    B = copy(A)
+	for lvl = 1:length(B.levels)
+        _left = B.grades[lvl].left
+        _right = B.grades[lvl].right
+        if (!isnothing(left) && _left < left) _left = left end
+        if (!isnothing(right) && _right < right) _right = right end
+		B.grades[lvl] = Interval(_left, _right)
+	end
+	B
+end
+
+function cut(X::Vector{FuzzyNumber}, α::Real)
+	N = length(X)
+	cuts = [cut(X[i], α) for i = 1:N]
+    cuts
+end

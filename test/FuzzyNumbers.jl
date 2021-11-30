@@ -30,3 +30,18 @@ C = FuzzyNumber(levels, number=5.0, width=0.5)
 D = SingletonFuzzyNumber(levels, number=0)
 @test support(D) == Interval(0)
 @test D.grades == repeat([Interval(0)], length(levels)) # TODO: check with all(...)
+
+A = FuzzyNumber(levels, number=1, width=0.5)
+FuzzySets.clip!(A, 0.2)
+B = FuzzySets.clip(A, 0.2)
+@test B.grades[1] == B.grades[41]
+@test B.grades[2] == B.grades[41]
+@test B.grades[40] == B.grades[41]
+
+A = FuzzyNumber(levels, number=0, width=2)
+draw(A)
+B = FuzzySets.clip(A, left=-1, right=1)
+draw(B)
+@test B.grades[1] == Interval(-1, 1)
+@test B.grades[2] == B.grades[41]
+@test B.grades[40] == B.grades[41]

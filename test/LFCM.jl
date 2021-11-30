@@ -17,13 +17,23 @@ B⃗ = FuzzyVector([B₁])
 @test FuzzySets.d_interval(A⃗, A⃗) == SingletonFuzzyNumber(levels, number=0)
 @test FuzzySets.d_interval(A⃗, B⃗) == false
 
+a = [Interval(-3), Interval(-2)]
+b = [Interval(-3), Interval(0)]
+@test FuzzySets.d_interval(a, b; squared=false) == Interval(((-3 - (-3))^2 + (-2 - 0)^2)^0.5)
+@test FuzzySets.d_interval(a, b; squared=true) == Interval(((-3 - (-3))^2 + (-2 - 0)^2))
 
-A = FuzzyNumber(levels, number=1, width=0.5)
-B = FuzzySets.clip(A)
-@test B.grades[1] == B.grades[41]
-@test B.grades[2] == B.grades[41]
-@test B.grades[40] == B.grades[41]
+a = [Interval(-3, -1), Interval(-2, 0)]
+b = [Interval(-3, -1), Interval(0, 2)]
+d_interval_sol = (a[1] - b[1])^2 + (a[2] - b[2])^2
+@test FuzzySets.d_interval(a, b; squared=true) == d_interval_sol
+@test FuzzySets.d_interval(a, b; squared=false) == d_interval_sol^0.5
 
+x = [Interval(-3), Interval(-0)]
+c1 = [Interval(-2.1), Interval(0)]
+c2 = [Interval(2.1), Interval(0)]
+d² = [FuzzySets.d_interval(x, c1; squared=true), FuzzySets.d_interval(x, c2; squared=true)]
+@test round(FuzzySets.u_interval(d², 1; m=2), digits=2) == Interval(0.97)
+@test round(FuzzySets.u_interval(d², 2; m=2), digits=2) == Interval(0.03)
 
 # Test cases from "Analysis and Efficient Implementation of a Linguistic Fuzzy C-Means" by S Auephanwiriyakul and JM Keller
 X = [Interval(1, 4), Interval(2, 3)]

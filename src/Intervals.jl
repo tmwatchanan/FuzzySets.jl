@@ -6,15 +6,18 @@ struct Interval
     right::Real
 
     function Interval(num1::Real, num2::Real)
-        return new(Float64(num1), Float64(num2))
+        if num1 > num2
+            error("Invalid interval, left must be less than right")
+        end
+        new(Float64(num1), Float64(num2))
     end
 
     function Interval(a::Real)
-        return new(Float64(a), Float64(a))
+        new(Float64(a), Float64(a))
     end
 
     function Interval(a::Vector{<:Real})
-        return new(Float64(a[1]), Float64(a[2]))
+        new(Float64(a[1]), Float64(a[2]))
     end
 
     function Interval()
@@ -41,6 +44,8 @@ Base.:(==)(a::Interval, b::Interval) = a.left == b.left && a.right == b.right
 Base.:≈(a::Interval, b::Interval) = a.left ≈ b.left && a.right ≈ b.right
 
 Base.isempty(a::Interval) = isnan(a.left) || isnan(a.right)
+
+Base.copy(a::Interval) = Interval(a.left, a.right)
 
 mid(a::Interval) = (a.left + a.right) / 2
 rad(a::Interval) = (a.right - a.left) / 2
@@ -74,10 +79,28 @@ function Base.:*(a::Real, b::Interval)
 end
 Base.:*(a::Interval, b::Real) = b * a
 
-Base.:/(a::Interval, b::Interval) = a * Interval(1 / b.left, 1 / b.right)
+function Base.inv(a::Interval)
+    left = a.right == 0 ? 0 : 1 / a.right
+    right = a.left == 0 ? 0 : 1 / a.left
+    # left = 1 / a.right
+    # right = 1 / a.left
+    println(left, ",", right)
+    Interval(left, right)
+end
+Base.:/(a::Real, b::Interval) = a * inv(b)
+Base.:/(a::Interval, b::Interval) = a * (1 / b)
 
 function Base.:^(a::Interval, b::Real)
-    if b == 2
+    println(a.left, ",", a.right)
+    if b < 0
+        a = 1 / a
+        b = -b
+    end
+
+    if b == 0.5
+        left = sqrt(a.left)
+        right = sqrt(a.right)
+    elseif b == 2
         if a.left <= 0 && 0 <= a.right
             left = 0
             right = mag(a)^2
@@ -88,14 +111,27 @@ function Base.:^(a::Interval, b::Real)
             left = a.right ^ b
             right = a.left ^ b
         end
-    elseif b == 0.5
-        left = sqrt(a.left)
-        right = sqrt(a.right)
     else
-        left = a.left ^ b
-        right = a.right ^ b
+        if a.left > 0 || isodd(b)
+            left = a.left ^ b
+            right = a.right ^ b
+        elseif a.right < 0 && iseven(b)
+            left = a.right ^ b
+            right = a.left ^ b
+        elseif a.left <= 0 && 0 <= a.right && iseven(b)
+            left = 0
+            println(a.left)
+            println(abs(a.left))
+            println(max(abs(a.left), abs(a.right)))
+            println(mag(a))
+            right = mag(a) ^ b
+        end
     end
     left = left == Inf ? 0 : left
     right = right == Inf ? 0 : right
 	Interval(left, right)
+end
+
+function Base.round(a::Interval; digits=2)
+    Interval(round(a.left, digits=digits), round(a.right, digits=digits))
 end

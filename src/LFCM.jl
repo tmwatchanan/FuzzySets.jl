@@ -99,7 +99,6 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 			c_idx = p + (i-1)*p + j
 			dⱼᵢ += (X⃗[j][endpoints[j]] - C⃗ᵢ[j][endpoints[c_idx]])^2
 		end
-		# dⱼᵢ ^= 0.5
 		if dⱼᵢ != 0
 			dⱼᵢ ^= h
 		end
@@ -112,7 +111,6 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 				c_idx = p + (k-1)*p + j
 				dⱼₖ += (X⃗[j][endpoints[j]] - C⃗ₖ[j][endpoints[c_idx]])^2
 			end
-			# dⱼₖ ^= 0.5
 			if dⱼₖ != 0
 				dⱼₖ ^= h
 			end
@@ -125,7 +123,7 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 	Interval(u_min, u_max)
 end
 
-function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
+function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	levels = X[1][1].levels
 	num_levels = length(levels)
@@ -233,7 +231,7 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
     y′
 end
 
-function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
+function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	levels = X[1][1].levels
 	num_levels = length(levels)
@@ -259,7 +257,7 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=1.5)
 	C
 end
 
-function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector)
+function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector; squared::Bool=false)
 	if A⃗ == B⃗
 		𝟎 = SingletonFuzzyNumber(A⃗[1].levels, number=0)
 		return 𝟎
@@ -267,34 +265,40 @@ function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector)
 		return false
 	end
 
-	p = length(A⃗)
 	levels = A⃗[1].levels
 	num_levels = length(levels)
-	distance_grades = Vector{Interval}(undef, num_levels)
-	for lvl = 1:num_levels
-		d = Interval(0)
-		for i = 1:p
-			a = A⃗[i][lvl]
-			b = B⃗[i][lvl]
-			d += ((a - b) ^ 2)
-		end
-		d ^= 0.5
-		distance_grades[lvl] = d
+
+	grades = Vector{Interval}(undef, num_levels)
+	for (lvl, α) in enumerate(levels)
+		A_cut = cut(A⃗, α)
+		B_cut = cut(B⃗, α)
+		grades[lvl] = d_interval(A_cut, B_cut; squared=squared)
 	end
-	FuzzyNumber(levels, distance_grades)
+	FuzzyNumber(levels, grades)
 end
 
-function u_interval(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::Real=1.5)
+function d_interval(A⃗::Vector{Interval}, B⃗::Vector{Interval}; squared::Bool=false)
+	p = length(A⃗)
+
+	d = Interval(0)
+	for i = 1:p
+		d += (A⃗[i] - B⃗[i])^2
+	end
+	if (!squared) d ^= 0.5 end
+
+	d
+end
+
+function u_interval(squared_fuzzy_distances::Vector{FuzzyNumber}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
-	h = 1 / (1 - m)
-	c = length(fuzzy_distances)
-	levels = X⃗[1].levels
+	c = length(squared_fuzzy_distances)
+	levels = squared_fuzzy_distances[1].levels
 	num_levels = length(levels)
 
 	I = Int64[]
 	𝟎 = SingletonFuzzyNumber(levels, number=0)
 	for i = 1:c
-		if fuzzy_distances[i] == 𝟎
+		if squared_fuzzy_distances[i] == 𝟎
 			push!(I, i)
 		end
 	end
@@ -302,16 +306,12 @@ function u_interval(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::
 	u⃗ = Vector{FuzzyNumber}(undef, c)
 	if isempty(I)
 		for i = 1:c
-			membership_grades = Vector{Interval}(undef, num_levels)
-			for lvl = 1:num_levels
-				dⱼᵢʰ = fuzzy_distances[i][lvl] ^ h
-				∑dⱼₖʰ = Interval(0)
-				for k = 1:c
-					∑dⱼₖʰ += fuzzy_distances[k][lvl] ^ h
-				end
-				membership_grades[lvl] = dⱼᵢʰ / ∑dⱼₖʰ
+			grades = Vector{Interval}(undef, num_levels)
+			for (lvl, α) in enumerate(levels)
+				d²_cut = cut(squared_fuzzy_distances, α)
+				grades[lvl] = u_interval(d²_cut, i; m=m)
 			end
-			u⃗[i] = FuzzyNumber(levels, membership_grades)
+			u⃗[i] = FuzzyNumber(levels, grades)
 		end
 	else
 		for i = 1:c
@@ -327,7 +327,12 @@ function u_interval(X⃗::FuzzyVector, fuzzy_distances::Vector{FuzzyNumber}; m::
 	u⃗
 end
 
-function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=1.5)
+function u_interval(squared_fuzzy_distances::Vector{Interval}, i::Int; m::Real=2.0)
+	h = 1 / (1 - m)
+	squared_fuzzy_distances[i]^h / sum(squared_fuzzy_distances.^h)
+end
+
+function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	levels = X⃗[1][1].levels
 	num_levels = length(levels)
@@ -350,12 +355,4 @@ function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=1
 	end
 	C⃗ = FuzzyVector(C⃗)
 	C⃗
-end
-
-function clip(A::FuzzyNumber)
-	lvl_02 = Int(floor(length(A.levels) / 5))
-	for lvl = 1:lvl_02
-		A.grades[lvl] = A.grades[lvl_02 + 1]
-	end
-	A
 end

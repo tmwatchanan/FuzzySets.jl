@@ -6,7 +6,7 @@ empty = Interval() # empty interval
 
 a = Interval(2, 4)
 @test mid(a) == 3
-@test rad(a) == -1
+@test rad(a) == 1
 
 b = Interval(3, 5)
 @test b == Interval(3, 5)
@@ -28,7 +28,6 @@ for (idx, x) in enumerate(zip(a, b))
         @test x == (4, 5)
     end
 end
-@test first(z) == (a[1], b[1])
 
 # Fuzzy distances
 a = Interval(1.5, 2.5)
