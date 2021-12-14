@@ -123,6 +123,31 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 	Interval(u_min, u_max)
 end
 
+function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::Int; m::Real=2.0)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	h = 1 / (1 - m)
+	c = length(prototypes)
+
+	djih = d_interval(X⃗[j], prototypes[i], squared=true)
+
+	d2jih = (djih.right)^h
+	d1jih = (djih.left)^h
+
+	u_a_denom = d2jih
+	u_b_denom = d1jih
+	for k = 1:c
+		if k != i
+			d2jkh = d_interval(X⃗[j], prototypes[k], squared=true)
+			u_a_denom += (d2jkh.left)^h
+			u_b_denom += (d2jkh.right)^h
+		end
+	end
+	u_a = d2jih / u_a_denom
+	u_b = d1jih / u_b_denom
+
+	Interval(u_a, u_b)
+end
+
 function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	levels = X[1][1].levels
