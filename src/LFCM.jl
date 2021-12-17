@@ -50,7 +50,7 @@ function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
 	d
 end
 
-function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=2.0)
+function u(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=2.0, method::String="lfcm")
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	levels = X⃗[1].levels
 	num_levels = length(levels)
@@ -64,7 +64,11 @@ function u_dsw(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=2.0)
 			for (lvl, α) in enumerate(levels)
 				X_cut = cut(X⃗, α)
 				C_cut = cut(prototypes,  α)
-				grades[lvl] = u_dsw(X_cut, C_cut, i, m=m)
+				if method == "lfcm"
+					grades[lvl] = u_lfcm(X_cut, C_cut, i, m=m)
+				elseif method == "dsw"
+					grades[lvl] = u_dsw(X_cut, C_cut, i, m=m)
+				end
 			end
 			uⱼ[i] = FuzzyNumber(levels, grades)
 		end
@@ -128,22 +132,72 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	h = 1 / (1 - m)
 	c = length(prototypes)
 
-	djih = d_interval(X⃗[j], prototypes[i], squared=true)
+	D = Vector{Interval}(undef, c)
 
-	d2jih = (djih.right)^h
-	d1jih = (djih.left)^h
+	for k = 1:c
+		D[k] = d_interval(X⃗, prototypes[k], squared=true)
+	end
+	
+	u_a = -1
+	u_b = -1
+
+	# corollary 1
+	if D[i].right != 0
+		for k = 1:c
+			if k != i && D[k].left == 0
+				u_a = 0
+				break
+			end
+		end
+	end
+	
+	# corollary 2
+	if D[i].right == D[i].left == 0
+		for k = 1:c
+			if k != i && D[k].left != 0
+				u_a = 1
+				break
+			end
+		end
+	end
+
+	# corollary 3
+	if D[i].left != 0
+		for k = 1:c
+			if k != i && D[k].right == 0
+				u_b = 0
+				break
+			end
+		end
+	end
+
+	# corollary 4
+	if D[i].left == 0
+		for k = 1:c
+			if k != i && D[k].right != 0
+				u_b = 1
+				break
+			end
+		end
+	end
+
+	d2jih = (D[i].right)^h
+	d1jih = (D[i].left)^h
 
 	u_a_denom = d2jih
 	u_b_denom = d1jih
 	for k = 1:c
 		if k != i
-			d2jkh = d_interval(X⃗[j], prototypes[k], squared=true)
-			u_a_denom += (d2jkh.left)^h
-			u_b_denom += (d2jkh.right)^h
+			u_a_denom += (D[k].left)^h
+			u_b_denom += (D[k].right)^h
 		end
 	end
-	u_a = d2jih / u_a_denom
-	u_b = d1jih / u_b_denom
+	if u_a == -1
+		u_a = d2jih / u_a_denom
+	end
+	if u_b == -1
+		u_b = d1jih / u_b_denom
+	end
 
 	Interval(u_a, u_b)
 end
@@ -205,9 +259,9 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
     x = Vector{Real}(undef, N)
     for k = 1:N
 		if bound == "lower"
-			x[k] = X[k].left # a_i
+			x[k] = round(X[k].left, digits=6) # a_i
 		elseif bound == "upper"
-			x[k] = X[k].right # b_i
+			x[k] = round(X[k].right, digits=6) # b_i
 		else
 			throw(ArgumentError("bound must be \"lower\" or \"upper\""))
 		end
@@ -219,22 +273,27 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
     c = Vector{Real}(undef, N)
     d = Vector{Real}(undef, N)
     for k = 1:N
-        w[k] = mid(u[k])
-        c[k] = u[k].left
-        d[k] = u[k].right
+        w[k] = round(mid(u[k]), digits=6)
+        c[k] = round(u[k].left, digits=6)
+        d[k] = round(u[k].right, digits=6)
     end
-    y′ = sum(w.^m .* x) / sum(w.^m)
+    y′ = round(sum(w.^m .* x) / sum(w.^m), digits=6)
 
-	while true
-        _k = 1
+	for iteration = 1:N+1
+		iteration <= N || error("KM IWA -> infinite loop")
+
+		# println(x_sorted)
+        _k = nothing
         for k = 1:N-1
             if x_sorted[k] <= y′ && y′ <= x_sorted[k+1]
+				# println(x_sorted[k], " <= ", y′, " <= ", x_sorted[k+1], " | k=$k")
                 _k = k
                 break
             end
-			k = N
         end
+		!isnothing(_k) || error("Can't find _k")
 
+		# println("_k ", _k)
 		left_indices = sorted_indices[1:_k]
 		right_indices = sorted_indices[_k+1:end]
 		if bound == "lower"
@@ -244,12 +303,13 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
 			w[left_indices] = c[left_indices]
 			w[right_indices] = d[right_indices]
 		end
+		# println(bound, " ", w)
 
-        y_k = sum(w.^m .* x) / sum(w.^m)
-        if y′ ≈ y_k
+        y_k = round(sum(w.^m .* x) / sum(w.^m), digits=6)
+        if isapprox(y′, y_k, atol=1e-5)
             break
-		else
-			println("$y′ is not equal to $y_k")
+		# else
+		# 	println("$y′ ≂̸ $y_k")
         end
         y′ = y_k
     end

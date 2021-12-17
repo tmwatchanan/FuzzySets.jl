@@ -84,14 +84,14 @@ function Base.inv(a::Interval)
     right = a.left == 0 ? 0 : 1 / a.left
     # left = 1 / a.right
     # right = 1 / a.left
-    println(left, ",", right)
+    # println(left, ",", right)
     Interval(left, right)
 end
 Base.:/(a::Real, b::Interval) = a * inv(b)
 Base.:/(a::Interval, b::Interval) = a * (1 / b)
 
 function Base.:^(a::Interval, b::Real)
-    println(a.left, ",", a.right)
+    # println(a.left, ",", a.right)
     if b < 0
         a = 1 / a
         b = -b
@@ -120,10 +120,10 @@ function Base.:^(a::Interval, b::Real)
             right = a.left ^ b
         elseif a.left <= 0 && 0 <= a.right && iseven(b)
             left = 0
-            println(a.left)
-            println(abs(a.left))
-            println(max(abs(a.left), abs(a.right)))
-            println(mag(a))
+            # println(a.left)
+            # println(abs(a.left))
+            # println(max(abs(a.left), abs(a.right)))
+            # println(mag(a))
             right = mag(a) ^ b
         end
     end
