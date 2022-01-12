@@ -126,3 +126,7 @@ term2 = sum((x - c2).^2)^h
 denom = term1 + term2
 u1_crisp = term1 / denom
 u2_crisp = term2 / denom
+
+n_points = 30
+@test FuzzySets.sequential_get_endpoints(n_points, 1) == ones(n_points)
+@test FuzzySets.sequential_get_endpoints(n_points, 2^n_points) == ones(n_points) .+ 1
