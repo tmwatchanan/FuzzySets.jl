@@ -12,6 +12,8 @@ include("FuzzySet.jl")
 include("FuzzyNumbers.jl")
 include("FuzzyVectors.jl")
 include("FuzzyWeightedAverages.jl")
+include("FCM.jl")
+include("IT2FCM.jl")
 include("LFCM.jl")
 
 export
