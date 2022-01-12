@@ -42,8 +42,16 @@ function triangle(levels::Vector{Float64}; b=0, width=0.5)
     return triangle.(levels, b=b, width=width)
 end
 
-function SingletonFuzzyNumber(levels::Vector{Float64}; number::Real=0)
+function SingletonFuzzyNumber(levels::Vector{Float64}; number::Real=0.0)
     return FuzzyNumber(levels, repeat([Interval(number)], length(levels)))
+end
+
+function isSingleton(A::FuzzyNumber)
+    if A[1].left != A[1].right
+        return false
+    end
+    B = SingletonFuzzyNumber(A.levels, number=A[1].left)
+    return A == B
 end
 
 function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black")
@@ -101,10 +109,37 @@ function clip(A::FuzzyNumber, α::Real=0.2)
     clip!(B, α)
 end
 
-function clip!(A::FuzzyNumber, α::Real=0.2)
+function clip!(A::FuzzyNumber; α::Real=0.2)
 	_lvl = Int(floor(length(A.levels) / (1 / α)))
 	for lvl = 1:_lvl
 		A.grades[lvl] = A.grades[_lvl + 1]
+	end
+end
+
+function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.8)
+    if isSingleton(A)
+        return
+    end
+    x3 = support(A).right
+    x2 = peak(A)
+    x1 = support(A).left
+    y3 = A(x3)
+    y2 = A(x2)
+    y1 = A(x1)
+    left_slope = (y2 - y1) / (x2 - x1)
+    right_slope = (y3 - y2) / (x3 - x2)
+    left_slope /= multiplier
+    right_slope /= multiplier
+    left_intercept = y2 - (left_slope * x2)
+    right_intercept = y2 - (right_slope * x2)
+    for lvl = 1:length(A.levels)
+        y = A.levels[lvl]
+        # x = (y - b) / m
+        left = (y - left_intercept) / left_slope
+        right = (y - right_intercept) / right_slope
+        left = min(left, x2)
+        right = max(x2, right)
+		A.grades[lvl] = Interval(left, right)
 	end
 end
 
