@@ -87,6 +87,9 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
     μ = fuzzynumber(xₘ)
     annotate!(fig, [(xₘ, μ, (round(xₘ, digits=2), 8, :black, :left))])
     # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
+    if isSingleton(fuzzynumber)
+        annotate!(fig, [(0.4, 0.5, ("singleton", 8, :black, :left))])
+    end
 
     current()
     return fig
@@ -137,6 +140,29 @@ function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.8)
         # x = (y - b) / m
         left = (y - left_intercept) / left_slope
         right = (y - right_intercept) / right_slope
+        left = min(left, x2)
+        right = max(x2, right)
+		A.grades[lvl] = Interval(left, right)
+	end
+end
+
+function dampen_reflect!(A::FuzzyNumber)
+    if isSingleton(A)
+        return
+    end
+    x3 = support(A).right
+    x2 = peak(A)
+    x1 = support(A).left
+
+    is_left_narrower =  x2 - x1 < x3 - x2
+    for lvl = 1:length(A.levels)
+        if is_left_narrower
+            left = A.grades[lvl].left
+            right = x2 + (x2 - left)
+        else
+            right = A.grades[lvl].right
+            left = x2 - (right - x2)
+        end
         left = min(left, x2)
         right = max(x2, right)
 		A.grades[lvl] = Interval(left, right)
