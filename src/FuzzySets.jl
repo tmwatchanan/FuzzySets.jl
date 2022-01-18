@@ -15,6 +15,7 @@ include("FuzzyWeightedAverages.jl")
 include("FCM.jl")
 include("IT2FCM.jl")
 include("LFCM.jl")
+include("LPCM.jl")
 
 export
     Interval, .., mid, rad,

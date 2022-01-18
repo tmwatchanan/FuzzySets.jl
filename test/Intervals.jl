@@ -44,3 +44,7 @@ a = Interval(0, 2.21)
 b = Interval(0, 1.48)
 @test a - b == Interval(-1.48, 2.21)
 @test (a - b) ^ 2 == Interval(0, 4.8841)
+
+@test 1 / Interval(0.4, 1.6) == Interval(0.625, 2.5)
+@test 1 / Interval(-0.4, 1.6) == Interval(-2.5, 0.625)
+@test 1 / Interval(0, 25) == Interval(0, 0.04)

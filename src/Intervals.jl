@@ -7,7 +7,7 @@ struct Interval
 
     function Interval(num1::Real, num2::Real)
         if num1 > num2
-            error("Invalid interval, left must be less than right")
+            error("Invalid interval [$num1, $num2], left must be less than right")
         end
         new(Float64(num1), Float64(num2))
     end
@@ -80,11 +80,20 @@ end
 Base.:*(a::Interval, b::Real) = b * a
 
 function Base.inv(a::Interval)
-    left = a.right == 0 ? 0 : 1 / a.right
-    right = a.left == 0 ? 0 : 1 / a.left
+    if a.left == 0
+        left = a.left
+        right = 1 / a.right
+    elseif a.left < 0 && 0 < a.right
+        left = 1 / a.left
+        right = 1 / a.right
+    else
+        left = a.right == 0 ? 0 : 1 / a.right
+        right = a.left == 0 ? 0 : 1 / a.left
+    end
     # left = 1 / a.right
     # right = 1 / a.left
-    # println(left, ",", right)
+    # println(a.left, ", ", a.right)
+    # println(left, ", ", right)
     Interval(left, right)
 end
 Base.:/(a::Real, b::Interval) = a * inv(b)
@@ -112,6 +121,8 @@ function Base.:^(a::Interval, b::Real)
             right = a.left ^ b
         end
     else
+        is_integer = floor(Int, b) == b
+        b = is_integer ? floor(Int, b) : b
         if a.left > 0 || isodd(b)
             left = a.left ^ b
             right = a.right ^ b

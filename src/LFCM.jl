@@ -16,7 +16,7 @@ end
 
 sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
 
-function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
+function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
 	levels = X⃗[1].levels
 	num_levels = length(levels)
 	p = length(X⃗)
@@ -38,7 +38,7 @@ function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector)
 				for i = 1:p
 					dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - Y⃗[i][lvl][endpoints[p + i]])^2
 				end
-				dⱼᵢ ^= 0.5
+				if (!squared) dⱼᵢ ^= 0.5 end
 
 				d_min = min(d_min, dⱼᵢ)
 				d_max = max(d_max, dⱼᵢ)
@@ -440,4 +440,17 @@ function c_interval(X⃗::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=2
 	end
 	C⃗ = FuzzyVector(C⃗)
 	C⃗
+end
+
+function d2(X⃗::Vector{FuzzyVector}, C⃗::Vector{FuzzyVector})
+	N = length(X⃗)
+	c = length(C⃗)
+	squared_fuzzy_distances = Matrix{FuzzyNumber}(undef, N, c)
+	for i = 1:c
+		for j = 1:N
+			squared_fuzzy_distances[j, i] = FuzzySets.d_dsw(X⃗[j], C⃗[i], squared=true)
+			# squared_fuzzy_distances[j, i] = FuzzySets.clip(squared_fuzzy_distances[j, i])
+		end
+	end
+	squared_fuzzy_distances
 end
