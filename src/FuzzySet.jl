@@ -26,3 +26,12 @@ function height(A::FuzzySet)
     end
 end
 peak(A::FuzzySet) = mid(core(A))
+
+function specificity(A::FuzzySet)
+    sp = 0
+	for (lvl, α) in enumerate(A.levels)
+		A_cut = cut(A, α)
+		sp += 1 - (A_cut.right - A_cut.left)
+	end
+	sp / length(A.levels)
+end
