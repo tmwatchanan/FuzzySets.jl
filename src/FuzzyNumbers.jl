@@ -107,9 +107,10 @@ Base.:*(A::FuzzyNumber, a::Real) = a * A
 
 # =============================================================================
 
-function clip(A::FuzzyNumber, α::Real=0.2)
+function clip(A::FuzzyNumber; α::Real=0.2)
     B = copy(A)
-    clip!(B, α)
+    clip!(B, α=α)
+    B
 end
 
 function clip!(A::FuzzyNumber; α::Real=0.2)
@@ -119,7 +120,13 @@ function clip!(A::FuzzyNumber; α::Real=0.2)
 	end
 end
 
-function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.8)
+function dampen_slope(A::FuzzyNumber; multiplier::Real=0.5)
+    B = copy(A)
+    FuzzySets.dampen_slope!(B, multiplier=multiplier)
+    B
+end
+
+function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.5)
     if isSingleton(A)
         return
     end
@@ -144,6 +151,12 @@ function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.8)
         right = max(x2, right)
 		A.grades[lvl] = Interval(left, right)
 	end
+end
+
+function dampen_reflect(A::FuzzyNumber)
+    B = copy(A)
+    dampen_reflect!(B)
+    B
 end
 
 function dampen_reflect!(A::FuzzyNumber)
