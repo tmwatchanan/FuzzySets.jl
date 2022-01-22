@@ -16,10 +16,29 @@ end
 
 sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
 
+function d_dsw(X⃗::Vector{Interval}, Y⃗::Vector{Interval}; squared::Bool=false)
+	p = length(X⃗)
+	num_endpoints = 2 * p
+
+	d_min = Inf
+	d_max = -Inf
+	for idx_endpoint = 1:2^num_endpoints
+		endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+		dⱼᵢ = 0
+		for i = 1:p
+			dⱼᵢ += (X⃗[i][endpoints[i]] - Y⃗[i][endpoints[p + i]])^2
+		end
+		if (!squared) dⱼᵢ ^= 0.5 end
+
+		d_min = min(d_min, dⱼᵢ)
+		d_max = max(d_max, dⱼᵢ)
+	end
+	Interval(d_min, d_max)
+end
+
 function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
 	levels = X⃗[1].levels
 	num_levels = length(levels)
-	p = length(X⃗)
 
 	if X⃗ == Y⃗
 		d = SingletonFuzzyNumber(levels, number=0)
@@ -27,23 +46,11 @@ function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
 		return false
 	else
 		grades = Vector{Interval}(undef, num_levels)
-		for lvl = 1:num_levels
-			num_endpoints = 2 * p
-
-			d_min = Inf
-			d_max = -Inf
-			for idx_endpoint = 1:2^num_endpoints
-				endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
-				dⱼᵢ = 0
-				for i = 1:p
-					dⱼᵢ += (X⃗[i][lvl][endpoints[i]] - Y⃗[i][lvl][endpoints[p + i]])^2
-				end
-				if (!squared) dⱼᵢ ^= 0.5 end
-
-				d_min = min(d_min, dⱼᵢ)
-				d_max = max(d_max, dⱼᵢ)
-			end
-			grades[lvl] = Interval(d_min, d_max)
+		for (lvl, α) in enumerate(levels)
+			X⃗_cut = cut(X⃗, α)
+			Y⃗_cut = cut(Y⃗, α)
+			print(X⃗_cut, Y⃗_cut)
+			grades[lvl] = d_dsw(X⃗_cut, Y⃗_cut; squared=squared)
 		end
 		d = FuzzyNumber(levels, grades)
 	end
@@ -135,7 +142,8 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	D = Vector{Interval}(undef, c)
 
 	for k = 1:c
-		D[k] = d_interval(X⃗, prototypes[k], squared=true)
+		D[k] = d_dsw(X⃗, prototypes[k], squared=true)
+		# D[k] = d_interval(X⃗, prototypes[k], squared=true)
 	end
 	
 	u_a = -1

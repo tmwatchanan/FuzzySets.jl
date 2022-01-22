@@ -19,6 +19,8 @@ B⃗ = FuzzyVector([B₁])
 
 a = [Interval(-3), Interval(-2)]
 b = [Interval(-3), Interval(0)]
+@test FuzzySets.d_dsw(a, b; squared=false) == Interval(((-3 - (-3))^2 + (-2 - 0)^2)^0.5)
+@test FuzzySets.d_dsw(a, b; squared=true) == Interval(((-3 - (-3))^2 + (-2 - 0)^2))
 @test FuzzySets.d_interval(a, b; squared=false) == Interval(((-3 - (-3))^2 + (-2 - 0)^2)^0.5)
 @test FuzzySets.d_interval(a, b; squared=true) == Interval(((-3 - (-3))^2 + (-2 - 0)^2))
 
