@@ -1,10 +1,11 @@
-import Plots: current, plot, plot!, vline!, annotate!, scatter!
+import Plots: current, plot, plot!, vline!, annotate!, scatter!, gr
 
 mutable struct FuzzyNumber <: FuzzySet
     levels::Vector{Float64}
     grades::Vector{Interval}
 
     function FuzzyNumber(levels::Vector{Float64}, grades::Vector{Interval})
+        
         A = new(levels, grades)
         println("FuzzyNumber $(peak(A)) created")
         return A
@@ -54,7 +55,8 @@ function isSingleton(A::FuzzyNumber)
     return A == B
 end
 
-function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black")
+function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black", font=Plots.font("Times", 8))
+    gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 	if isnothing(fig)
 		if isnothing(range)
             fig = plot(ylims = (0, 1), dpi=600)
@@ -89,6 +91,58 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
     # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     if isSingleton(fuzzynumber)
         annotate!(fig, [(0.4, 0.5, ("singleton", 8, :black, :left))])
+    end
+
+    current()
+    return fig
+end
+
+function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, linecolors::Vector{String}=["black", "red"], xlabel="", ylabel="", font=Plots.font("Times", 8), size=(450, 150), offset_value=0)
+    gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+	if isnothing(fig)
+		if isnothing(range)
+            fig = plot(ylims = (0, 1), dpi=600, size=size, xlabel=xlabel, ylabel=ylabel)
+        else
+			xmin = range[1]
+			xmax = range[2]
+            fig = plot(xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:0.2:xmax), dpi=600, size=size, xlabel=xlabel, ylabel=ylabel)
+		end
+	end
+
+    for (index, (fuzzynumber, linecolor)) in enumerate(zip(fuzzynumbers, linecolors))
+        # draw level cuts
+        if isSingleton(fuzzynumber)
+            println("SINGLETON!")
+            vline!(fig, [fuzzynumber[1].left], linecolor=linecolor, legend=false, xlabel=xlabel, ylabel=ylabel)
+        else
+        for i = 1:length(fuzzynumber.levels)
+            lvl = fuzzynumber.levels[i]
+            interval = fuzzynumber[i]
+            if interval.left == interval.right
+                # scatter!(fig, [interval.left], [lvl], c=linecolor, marker=1, markershape=:cross, legend=false, xlabel=xlabel, ylabel=ylabel)
+            else
+                plot!(fig, vec(interval), [lvl, lvl], linecolor=linecolor, legend=false, seriesalpha=0.2)
+            end
+            # break
+        end
+    end
+        # points = [Point2f0(fuzzynumber.grades[i][1], fuzzynumber.levels[i]) => Point2f0(fuzzynumber.grades[i][2], fuzzynumber.levels[i]) for i = 1:length(fuzzynumber.levels)]
+        # linesegments(points, color = :red, linewidth = 2)
+
+        # marking peak
+        xₘ = peak(fuzzynumber)
+        μ = fuzzynumber(xₘ)
+        peak_text = string(round(xₘ, digits=2))
+        if isSingleton(fuzzynumber)
+            # peak_text *= " [s]"
+        end
+        # if xₘ == 1.0
+        #     xₘ -= 0.1
+        # end
+        offset = -(index - 1) * offset_value
+        position = index == 1 ? :left : :right
+        annotate!(fig, [(xₘ, μ+offset, (peak_text, 8, linecolor, position, "Times"))])
+        # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     end
 
     current()
@@ -142,11 +196,10 @@ function dampen_slope!(A::FuzzyNumber; multiplier::Real=0.5)
     right_slope /= multiplier
     left_intercept = y2 - (left_slope * x2)
     right_intercept = y2 - (right_slope * x2)
-    for lvl = 1:length(A.levels)
-        y = A.levels[lvl]
+    for (lvl, α) in enumerate(A.levels)
         # x = (y - b) / m
-        left = (y - left_intercept) / left_slope
-        right = (y - right_intercept) / right_slope
+        left = (α - left_intercept) / left_slope
+        right = (α - right_intercept) / right_slope
         left = min(left, x2)
         right = max(x2, right)
 		A.grades[lvl] = Interval(left, right)

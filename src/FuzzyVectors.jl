@@ -71,12 +71,18 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001, colormap=:jet1)
 end
 
 function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker::Symbol=nothing, peak_text::Bool=false)
+	font=Plots.font("Times", 8)
+    gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 	A₁ = FV[1]
 	A₂ = FV[2]
-	x1 = max(A₁.grades[1].left, -3.5)
-	x2 = min(A₁.grades[1].right, 3.5)
-	y1 = max(A₂.grades[1].left, -3.5)
-	y2 = min(A₂.grades[1].right, 3.5)
+	# x1 = max(A₁.grades[1].left, -3.5)
+	# x2 = min(A₁.grades[1].right, 3.5)
+	# y1 = max(A₂.grades[1].left, -3.5)
+	# y2 = min(A₂.grades[1].right, 3.5)
+	x1 = A₁.grades[1].left
+	x2 = A₁.grades[1].right
+	y1 = A₂.grades[1].left
+	y2 = A₂.grades[1].right
 	X = collect(x1:step:x2)
 	Y = collect(y1:step:y2)
 	f(x, y) = min(A₁(x), A₂(y))
@@ -84,6 +90,7 @@ function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha
 		fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true, dpi=600)
 	else
 		fig = Plots.contour!(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true, dpi=600)
+		fig = Plots.contour!(fig, [0, 0], [0, 0], [0, 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, dpi=600, colorbar=true)
 	end
 
 	# plot peak

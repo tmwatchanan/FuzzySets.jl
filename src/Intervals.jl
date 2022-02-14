@@ -98,6 +98,7 @@ function Base.inv(a::Interval)
 end
 Base.:/(a::Real, b::Interval) = a * inv(b)
 Base.:/(a::Interval, b::Interval) = a * (1 / b)
+Base.:/(a::Interval, b::Real) = a / Interval(b)
 
 function Base.:^(a::Interval, b::Real)
     # println(a.left, ",", a.right)

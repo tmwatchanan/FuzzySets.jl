@@ -45,3 +45,8 @@ draw(B)
 @test B.grades[1] == Interval(-1, 1)
 @test B.grades[2] == B.grades[41]
 @test B.grades[40] == B.grades[41]
+
+A = SingletonFuzzyNumber(levels, number=5)
+B = FuzzyNumber(levels, number=5)
+@test FuzzySets.isSingleton(A) == true
+@test FuzzySets.isSingleton(B) == false

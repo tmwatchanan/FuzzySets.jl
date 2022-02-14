@@ -19,9 +19,9 @@ function η_karnik(u::Matrix{FuzzyNumber}, d2::Matrix{FuzzyNumber}; m::Real=2.0)
 	η
 end
 
-function u_lpcm(X⃗::FuzzyVector, prototypes::FuzzyVector, η::FuzzyNumber; m::Real=2.0)
+function u_lpcm(X⃗::FuzzyVector, prototypes::FuzzyVector, η::Real; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞), got $m")
-	peak(η) > 0 || error("η must be suitable positive number, got $(peak(η))")
+	η > 0 || error("η must be suitable positive number")
 	levels = X⃗[1].levels
 	num_levels = length(levels)
 
@@ -29,16 +29,15 @@ function u_lpcm(X⃗::FuzzyVector, prototypes::FuzzyVector, η::FuzzyNumber; m::
 	for (lvl, α) in enumerate(levels)
 		X_cut = cut(X⃗, α)
 		C_cut = cut(prototypes,  α)
-		η_cut = cut(η, α)
-		grades[lvl] = u_lpcm(X_cut, C_cut, η_cut, m=m)
+		grades[lvl] = u_lpcm(X_cut, C_cut, η, m=m)
 	end
 	u = FuzzyNumber(levels, grades)
 	u
 end
 
-function u_lpcm(X⃗::Vector{Interval}, prototypes::Vector{Interval}, η::Interval; m::Real=2.0)
+function u_lpcm(X⃗::Vector{Interval}, prototypes::Vector{Interval}, η::Real; m::Real=2.0)
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
-	η.left >= 0 || error("η must be suitable positive number")
+	η > 0 || error("η must be suitable positive number")
 	power = 1 / (m - 1)
 
 	d2 = d_interval(X⃗, prototypes, squared=true)

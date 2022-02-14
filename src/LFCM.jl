@@ -14,7 +14,7 @@ function get_endpoints(N)
 	return combs
 end
 
-sequential_get_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
+get_sequential_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
 
 function d_dsw(X⃗::Vector{Interval}, Y⃗::Vector{Interval}; squared::Bool=false)
 	p = length(X⃗)
@@ -23,7 +23,7 @@ function d_dsw(X⃗::Vector{Interval}, Y⃗::Vector{Interval}; squared::Bool=fal
 	d_min = Inf
 	d_max = -Inf
 	for idx_endpoint = 1:2^num_endpoints
-		endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+		endpoints = get_sequential_endpoints(num_endpoints, idx_endpoint)
 		dⱼᵢ = 0
 		for i = 1:p
 			dⱼᵢ += (X⃗[i][endpoints[i]] - Y⃗[i][endpoints[p + i]])^2
@@ -49,7 +49,6 @@ function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
 		for (lvl, α) in enumerate(levels)
 			X⃗_cut = cut(X⃗, α)
 			Y⃗_cut = cut(Y⃗, α)
-			print(X⃗_cut, Y⃗_cut)
 			grades[lvl] = d_dsw(X⃗_cut, Y⃗_cut; squared=squared)
 		end
 		d = FuzzyNumber(levels, grades)
@@ -103,7 +102,7 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 	u_min = Inf
 	u_max = -Inf
 	for idx_endpoint = 1:2^num_endpoints
-		endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+		endpoints = get_sequential_endpoints(num_endpoints, idx_endpoint)
 
 		dⱼᵢ = 0
 		for j = 1:p
@@ -134,7 +133,7 @@ function u_dsw(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::
 	Interval(u_min, u_max)
 end
 
-function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::Int; m::Real=2.0)
+function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::Int; m::Real=2.0, d_method::String="interval")
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
 	h = 1 / (1 - m)
 	c = length(prototypes)
@@ -142,8 +141,11 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	D = Vector{Interval}(undef, c)
 
 	for k = 1:c
-		D[k] = d_dsw(X⃗, prototypes[k], squared=true)
-		# D[k] = d_interval(X⃗, prototypes[k], squared=true)
+		if d_method == "dsw"
+			D[k] = d_dsw(X⃗, prototypes[k], squared=true)
+		else
+			D[k] = d_interval(X⃗, prototypes[k], squared=true)
+		end
 	end
 	
 	u_a = -1
@@ -228,7 +230,7 @@ function c_dsw(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 				c_min = Inf
 				c_max = -Inf
 				@floop for idx_endpoint = 1:2^num_endpoints
-					endpoints = sequential_get_endpoints(num_endpoints, idx_endpoint)
+					endpoints = get_sequential_endpoints(num_endpoints, idx_endpoint)
 					numerator = 0
 					for k = 1:N
 						u_i = N + k
@@ -456,7 +458,7 @@ function d2(X⃗::Vector{FuzzyVector}, C⃗::Vector{FuzzyVector})
 	squared_fuzzy_distances = Matrix{FuzzyNumber}(undef, N, c)
 	for i = 1:c
 		for j = 1:N
-			squared_fuzzy_distances[j, i] = FuzzySets.d_dsw(X⃗[j], C⃗[i], squared=true)
+			squared_fuzzy_distances[j, i] = FuzzySets.d_interval(X⃗[j], C⃗[i], squared=true)
 			# squared_fuzzy_distances[j, i] = FuzzySets.clip(squared_fuzzy_distances[j, i])
 		end
 	end

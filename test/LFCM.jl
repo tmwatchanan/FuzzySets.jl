@@ -130,5 +130,5 @@ u1_crisp = term1 / denom
 u2_crisp = term2 / denom
 
 n_points = 30
-@test FuzzySets.sequential_get_endpoints(n_points, 1) == ones(n_points)
-@test FuzzySets.sequential_get_endpoints(n_points, 2^n_points) == ones(n_points) .+ 1
+@test FuzzySets.get_sequential_endpoints(n_points, 1) == ones(n_points)
+@test FuzzySets.get_sequential_endpoints(n_points, 2^n_points) == ones(n_points) .+ 1
