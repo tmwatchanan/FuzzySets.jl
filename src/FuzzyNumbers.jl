@@ -12,8 +12,13 @@ mutable struct FuzzyNumber <: FuzzySet
     end
 
     function FuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
-        println("FuzzyNumber $number created")
+        println("Triangular FuzzyNumber $number created")
         new(levels, triangle.(levels, b=number, width=width))
+    end
+
+    function FuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
+        println("Trapezoidal FuzzyNumber $number created")
+        new(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
     end
 end
 
@@ -32,15 +37,28 @@ function Base.:(==)(A::FuzzyNumber, B::FuzzyNumber)
     return true
 end
 
-function triangle(x::Real; b=0, width=0.5)
+function triangle(α::Real; b=0, width=0.5)
+    (α >= 0 && α <= 1) || error("Invalid α")
     left(α, a, b) = (b - a) * α + a
     right(α, b, c) = c - (c - b) * α
     mfx(α, a, b, c) = Interval(left(α, a, b), right(α, b, c))
-    return mfx(x, b - width, b, b + width)
+    return mfx(α, b - width, b, b + width)
 end
 
 function triangle(levels::Vector{Float64}; b=0, width=0.5)
     return triangle.(levels, b=b, width=width)
+end
+
+function trapezoid(α::Real; p, w_l, w_r, a)
+    (α >= 0 && α <= 1) || error("Invalid α")
+    left(α, a, b) = (b - a) * α + a
+    right(α, b, c) = c - (c - b) * α
+    mfx(α, a, b, c, d) = Interval(left(α, a, b), right(α, c, d))
+    return mfx(α, p - w_l - a, p - w_l, p + w_r, p + w_r + a)
+end
+
+function trapezoid(levels::Vector{Float64}; p, w_l, w_r, a)
+    return trapezoid.(levels, p=p, w_l=w_l, w_r=w_r, a=a)
 end
 
 function SingletonFuzzyNumber(levels::Vector{Float64}; number::Real=0.0)

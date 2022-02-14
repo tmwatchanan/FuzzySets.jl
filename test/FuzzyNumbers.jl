@@ -50,3 +50,17 @@ A = SingletonFuzzyNumber(levels, number=5)
 B = FuzzyNumber(levels, number=5)
 @test FuzzySets.isSingleton(A) == true
 @test FuzzySets.isSingleton(B) == false
+
+p = 6
+w_l = 2
+w_r = 2
+a = 2
+@test FuzzySets.trapezoid(0; p, w_l, w_r, a) == Interval(2, 10)
+@test FuzzySets.trapezoid(0.5; p, w_l, w_r, a) == Interval(3, 9)
+@test FuzzySets.trapezoid(1.0; p, w_l, w_r, a) == Interval(4, 8)
+@test_throws ErrorException FuzzySets.trapezoid(1.5; p, w_l, w_r, a)
+
+A = FuzzyNumber(levels; number=p, w_l, w_r, a)
+@test A.grades[1] == Interval(2, 10)
+@test A.grades[101] == Interval(3, 9)
+@test A.grades[end] == Interval(4, 8)
