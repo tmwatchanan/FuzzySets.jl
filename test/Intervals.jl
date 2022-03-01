@@ -48,3 +48,8 @@ b = Interval(0, 1.48)
 @test 1 / Interval(0.4, 1.6) == Interval(0.625, 2.5)
 @test 1 / Interval(-0.4, 1.6) == Interval(-2.5, 0.625)
 @test 1 / Interval(0, 25) == Interval(0, 0.04)
+
+a = Interval(0.3, 0.6)
+b = Interval(0.4, 0.7)
+@test a - b == Interval(0.3-0.7, 0.6-0.4)
+@test (a - b)^2 == Interval(0, max((0.3-0.7)^2, (0.6-0.4)^2))
