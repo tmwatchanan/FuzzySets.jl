@@ -70,7 +70,7 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001, colormap=:jet1)
     # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
 end
 
-function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker::Symbol=nothing, peak_text::Bool=false)
+function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker=nothing, peak_text::Bool=false)
 	font=Plots.font("Times", 8)
     gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 	A₁ = FV[1]
@@ -94,15 +94,52 @@ function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha
 	end
 
 	# plot peak
-	Z = [f(x, y) for x in X, y in Y]
-	max_indices = argmax(Z)
-	max_x = X[max_indices[1]]
-	max_y = Y[max_indices[2]]
+	center_x = centroid(A₁)
+	center_y = centroid(A₂)
 	if !isnothing(marker)
-		fig = Plots.scatter!(fig, (max_x, max_y), legend=false, m=marker)
+		fig = Plots.scatter!(fig, (center_x, center_y), legend=false, m=marker)
 	end
 	if peak_text
-		fig = Plots.annotate!(fig, [(max_x, max_y, ("$(round(max_x, digits=2)), $(round(max_y, digits=2))", 8, :black, :center))])
+		fig = Plots.annotate!(fig, [(center_x, center_y, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, :black, :center))])
+	end
+
+	fig
+end
+
+function draw_contour_2d(FVs::Vector{FuzzyVector}; step::Float64=0.01, fig=nothing, c=:jet1, peak_colors=["black", "red"], alpha::Vector{Float64}=nothing, marker=nothing, peak_text::Bool=false, offset::Real=0, xlim=nothing, ylim=nothing)
+	font=Plots.font("Times", 8)
+    gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+
+	centers = []
+	for (i, FV) in enumerate(FVs)
+		A₁ = FV[1]
+		A₂ = FV[2]
+		x1 = A₁.grades[1].left
+		x2 = A₁.grades[1].right
+		y1 = A₂.grades[1].left
+		y2 = A₂.grades[1].right
+		X = collect(x1:step:x2)
+		Y = collect(y1:step:y2)
+		f(x, y) = min(A₁(x), A₂(y))
+		center_x = centroid(A₁)
+		center_y = centroid(A₂)
+		push!(centers, (center_x, center_y))
+		if isnothing(fig)
+			fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha[i], xlim=xlim, ylim=ylim, fill=true, dpi=600)
+		else
+			fig = Plots.contour!(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha[i], fill=true, dpi=600, xlim=xlim, ylim=ylim)
+			fig = Plots.contour!(fig, [0, 0], [0, 0], [0, 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, dpi=600, colorbar=true, xlim=xlim, ylim=ylim)
+		end
+	end
+
+	# plot peak
+	for (i, (center_x, center_y)) in enumerate(centers)
+		if !isnothing(marker)
+			fig = Plots.scatter!(fig, (center_x, center_y), legend=false, m=marker)
+		end
+		if peak_text
+			fig = Plots.annotate!(fig, [(center_x, center_y+offset, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, peak_colors[i], :center))])
+		end
 	end
 
 	fig
