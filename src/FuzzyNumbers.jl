@@ -5,21 +5,36 @@ mutable struct FuzzyNumber <: FuzzySet
     grades::Vector{Interval}
 
     function FuzzyNumber(levels::Vector{Float64}, grades::Vector{Interval})
-        
         A = new(levels, grades)
-        println("FuzzyNumber $(peak(A)) created")
+        # println("FuzzyNumber $(peak(A)) created")
         return A
     end
 
-    function FuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
-        println("Triangular FuzzyNumber $number created")
-        new(levels, triangle.(levels, b=number, width=width))
-    end
+    # function FuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
+    #     println("Triangular FuzzyNumber $number created")
+    #     new(levels, triangle.(levels, b=number, width=width))
+    # end
 
-    function FuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
-        println("Trapezoidal FuzzyNumber $number created")
-        new(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
-    end
+    # function FuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
+    #     println("Trapezoidal FuzzyNumber $number created")
+    #     new(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
+    # end
+end
+
+function TriangularFuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
+    println("Triangular FuzzyNumber $number created")
+    FuzzyNumber(levels, triangle.(levels, b=number, width=width))
+end
+
+function TrapezoidalFuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
+    println("Trapezoidal FuzzyNumber $number created")
+    FuzzyNumber(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
+end
+
+function GaussianFuzzyNumber(levels::Vector{Float64}; μ::Real, σ::Real)
+    println("Gaussian FuzzyNumber $μ created")
+    levels[1] = levels[2] # solve infinite support
+    FuzzyNumber(levels, gaussian_interval.(levels; μ=μ, σ=σ))
 end
 
 Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
@@ -73,15 +88,20 @@ function isSingleton(A::FuzzyNumber)
     return A == B
 end
 
-function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black", font=Plots.font("Times", 8))
+function gaussian_interval(y::Real; μ::Real, σ::Real)
+    term = sqrt(-2 * σ^2 * log(y))
+    Interval(μ - term, μ + term)
+end
+
+function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black", font=Plots.font("Times", 8), ylabel="")
     gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 	if isnothing(fig)
 		if isnothing(range)
-            fig = plot(ylims = (0, 1), dpi=600)
+            fig = plot(ylabel=ylabel, ylims = (0, 1), dpi=600)
         else
 			xmin = range[1]
 			xmax = range[2]
-            fig = plot(xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:1:xmax), dpi=600)
+            fig = plot(ylabel=ylabel, xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:1:xmax), dpi=600)
 		end
 	end
 	if linecolor == "random"
@@ -105,7 +125,7 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
     # marking peak
     xₘ = peak(fuzzynumber)
     μ = fuzzynumber(xₘ)
-    annotate!(fig, [(xₘ, μ, (round(xₘ, digits=2), 8, :black, :left))])
+    annotate!(fig, [(xₘ, μ, (round(xₘ, digits=2), 8, :blue, :left))])
     # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     if isSingleton(fuzzynumber)
         annotate!(fig, [(0.4, 0.5, ("singleton", 8, :black, :left))])
@@ -132,7 +152,7 @@ function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, l
         if isSingleton(fuzzynumber)
             println("SINGLETON!")
             vline!(fig, [fuzzynumber[1].left], linecolor=linecolor, legend=false, xlabel=xlabel, ylabel=ylabel)
-        else
+        end
         for i = 1:length(fuzzynumber.levels)
             lvl = fuzzynumber.levels[i]
             interval = fuzzynumber[i]
@@ -143,7 +163,7 @@ function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, l
             end
             # break
         end
-    end
+        
         # points = [Point2f0(fuzzynumber.grades[i][1], fuzzynumber.levels[i]) => Point2f0(fuzzynumber.grades[i][2], fuzzynumber.levels[i]) for i = 1:length(fuzzynumber.levels)]
         # linesegments(points, color = :red, linewidth = 2)
 
