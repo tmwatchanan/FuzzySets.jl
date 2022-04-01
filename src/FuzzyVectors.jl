@@ -94,8 +94,8 @@ function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha
 	end
 
 	# plot peak
-	center_x = centroid(A₁)
-	center_y = centroid(A₂)
+	center_x = peak_center(A₁) # or can be centroid()
+	center_y = peak_center(A₂) # or can be centroid()
 	if !isnothing(marker)
 		fig = Plots.scatter!(fig, (center_x, center_y), legend=false, m=marker)
 	end
@@ -121,8 +121,8 @@ function draw_contour_2d(FVs::Vector{FuzzyVector}; step::Float64=0.01, fig=nothi
 		X = collect(x1:step:x2)
 		Y = collect(y1:step:y2)
 		f(x, y) = min(A₁(x), A₂(y))
-		center_x = centroid(A₁)
-		center_y = centroid(A₂)
+		center_x = peak_center(A₁) # or can be centroid()
+		center_y = peak_center(A₂) # or can be centroid()
 		push!(centers, (center_x, center_y))
 		if isnothing(fig)
 			fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha[i], xlim=xlim, ylim=ylim, fill=true, dpi=600)

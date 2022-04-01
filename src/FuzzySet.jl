@@ -36,6 +36,8 @@ function centroid(A::FuzzySet; step::Float64=0.01)
     c / μ
 end
 
+peak_center(A::FuzzySet) = sum(A.grades[end]) / 2
+
 function specificity(A::FuzzySet)
     sp = 0
 	for (lvl, α) in enumerate(A.levels)
