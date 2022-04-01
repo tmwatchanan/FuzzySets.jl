@@ -1,40 +1,41 @@
 import Plots: current, plot, plot!, vline!, annotate!, scatter!, gr
 
 mutable struct FuzzyNumber <: FuzzySet
-    levels::Vector{Float64}
+    levels::Vector{<:Real}
     grades::Vector{Interval}
 
-    function FuzzyNumber(levels::Vector{Float64}, grades::Vector{Interval})
+    function FuzzyNumber(levels::Vector{<:Real}, grades::Vector{Interval})
         A = new(levels, grades)
         # println("FuzzyNumber $(peak(A)) created")
         return A
     end
 
-    # function FuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
+    # function FuzzyNumber(levels::Vector{<:Real}; number::Real=0.0, width::Real=0.5)
     #     println("Triangular FuzzyNumber $number created")
     #     new(levels, triangle.(levels, b=number, width=width))
     # end
 
-    # function FuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
+    # function FuzzyNumber(levels::Vector{<:Real}; number::Real, w_l::Real, w_r::Real, a::Real)
     #     println("Trapezoidal FuzzyNumber $number created")
     #     new(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
     # end
 end
 
-function TriangularFuzzyNumber(levels::Vector{Float64}; number::Real=0.0, width::Real=0.5)
+function TriangularFuzzyNumber(levels::Vector{<:Real}; number::Real=0.0, width::Real=0.5)
     println("Triangular FuzzyNumber $number created")
     FuzzyNumber(levels, triangle.(levels, b=number, width=width))
 end
 
-function TrapezoidalFuzzyNumber(levels::Vector{Float64}; number::Real, w_l::Real, w_r::Real, a::Real)
+function TrapezoidalFuzzyNumber(levels::Vector{<:Real}; number::Real, w_l::Real, w_r::Real, a::Real)
     println("Trapezoidal FuzzyNumber $number created")
     FuzzyNumber(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
 end
 
-function GaussianFuzzyNumber(levels::Vector{Float64}; μ::Real, σ::Real)
+function GaussianFuzzyNumber(levels::Vector{<:Real}; μ::Real, σ::Real)
     println("Gaussian FuzzyNumber $μ created")
-    levels[1] = levels[2] # solve infinite support
-    FuzzyNumber(levels, gaussian_interval.(levels; μ=μ, σ=σ))
+    A = FuzzyNumber(levels, gaussian_interval.(levels; μ=μ, σ=σ))
+    A.grades[1:80] .= [A.grades[81]] # solve infinite support
+    A
 end
 
 Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
@@ -60,7 +61,7 @@ function triangle(α::Real; b=0, width=0.5)
     return mfx(α, b - width, b, b + width)
 end
 
-function triangle(levels::Vector{Float64}; b=0, width=0.5)
+function triangle(levels::Vector{<:Real}; b=0, width=0.5)
     return triangle.(levels, b=b, width=width)
 end
 
@@ -72,11 +73,11 @@ function trapezoid(α::Real; p, w_l, w_r, a)
     return mfx(α, p - w_l - a, p - w_l, p + w_r, p + w_r + a)
 end
 
-function trapezoid(levels::Vector{Float64}; p, w_l, w_r, a)
+function trapezoid(levels::Vector{<:Real}; p, w_l, w_r, a)
     return trapezoid.(levels, p=p, w_l=w_l, w_r=w_r, a=a)
 end
 
-function SingletonFuzzyNumber(levels::Vector{Float64}; number::Real=0.0)
+function SingletonFuzzyNumber(levels::Vector{<:Real}; number::Real=0.0)
     return FuzzyNumber(levels, repeat([Interval(number)], length(levels)))
 end
 
@@ -101,7 +102,7 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
         else
 			xmin = range[1]
 			xmax = range[2]
-            fig = plot(ylabel=ylabel, xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:1:xmax), dpi=600)
+            fig = plot(ylabel=ylabel, xlims = (xmin, xmax), ylims = (0, 1), dpi=600) # xticks=collect(xmin:1:xmax)
 		end
 	end
 	if linecolor == "random"
