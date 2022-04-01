@@ -25,9 +25,7 @@ struct Interval
     end
 end
 
-function ..(a::Real, b::Real)
-    Interval(a, b)
-end
+..(a::Real, b::Real) = Interval(a, b)
 
 function Base.getindex(a::Interval, index::Int64)
     if index == 1 return a.left
@@ -56,6 +54,8 @@ sqr(a::Interval) = a ^ 2
 
 # INTERVAL ARITHMETIC ========================================================
 
+Base.:+(a::Real, b::Interval) = Interval(a + b.left, a + b.right)
+Base.:+(a::Interval, b::Real) = b + a
 Base.:+(a::Interval, b::Interval) = Interval(a.left + b.left, a.right + b.right)
 Base.:-(a::Interval, b::Interval) = Interval(a.left - b.right, a.right - b.left)
 
