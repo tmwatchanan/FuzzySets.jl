@@ -7,6 +7,26 @@ Base.getindex(FV::FuzzyVector, i::Int64) = FV.numbers[i]
 Base.show(io::IO, FV::FuzzyVector) = println(io, "fuzzy vector length $(length(FV))")
 Base.iterate(FV::FuzzyVector, state=1) = state > length(FV.numbers) ? nothing : FV.numbers[state]
 
+# FUZZY ARITHMETIC ============================================================
+function Base.:+(A⃗::FuzzyVector, B⃗::FuzzyVector)
+	p = length(A⃗)
+	result_vector = Vector{FuzzyNumber}(undef, p)
+	for k = 1:p
+		result_vector[k] = A⃗[k] + B⃗[k]
+	end
+	FuzzyVector(result_vector)
+end
+function Base.:-(A⃗::FuzzyVector)
+	p = length(A⃗)
+	result_vector = Vector{FuzzyNumber}(undef, p)
+	for k = 1:p
+		result_vector[k] = -A⃗[k]
+	end
+	FuzzyVector(result_vector)
+end
+Base.:-(A⃗::FuzzyVector, B⃗::FuzzyVector) = A⃗ + (-B⃗)
+# =============================================================================
+
 function Base.:(==)(A⃗::FuzzyVector, B⃗::FuzzyVector)
     if length(A⃗) != length(B⃗)
         return false
