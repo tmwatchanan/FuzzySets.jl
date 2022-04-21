@@ -24,5 +24,7 @@ export
     FuzzyNumber, SingletonFuzzyNumber, TriangularFuzzyNumber, TrapezoidalFuzzyNumber, GaussianFuzzyNumber,
     FuzzyVector, 
     peak, draw,
-    fuzzy_weighted_average
+    fuzzy_weighted_average,
+    euclidean_distance,
+    u_uncertainty
 end

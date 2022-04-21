@@ -46,3 +46,21 @@ function specificity(A::FuzzySet)
 	end
 	sp / length(A.levels)
 end
+
+function u_uncertainty(A::FuzzySet)
+    if isSingleton(A)
+        return 0
+    end
+    u = 0
+    alphas = [reverse(A.levels); 0]
+	for j = 1:length(A.levels)
+        α_current = alphas[j]
+        α_below = alphas[j + 1]
+		A_cut = cut(A, α_current)
+        if isnan(A_cut.left)
+            continue
+        end
+		u += (α_current - α_below) * log(1 + width(A_cut))
+	end
+	u / height(A)
+end
