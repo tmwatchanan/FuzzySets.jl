@@ -135,26 +135,34 @@ end
 
 function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i::Int; m::Real=2.0, d_method::String="interval")
 	m > 1 || error("fuzzifier m ∈ (1, ∞)")
-	h = 1 / (1 - m)
 	c = length(prototypes)
 
-	D = Vector{Interval}(undef, c)
+	D_squared = Vector{Interval}(undef, c)
 
 	for k = 1:c
 		if d_method == "dsw"
-			D[k] = d_dsw(X⃗, prototypes[k], squared=true)
+			D_squared[k] = d_dsw(X⃗, prototypes[k], squared=true)
 		else
-			D[k] = d_interval(X⃗, prototypes[k], squared=true)
+			D_squared[k] = d_interval(X⃗, prototypes[k], squared=true)
 		end
 	end
+
+	u_lfcm(D_squared, i; m=m)
+end
 	
+
+function u_lfcm(D_squared::Vector{Interval}, i::Int; m::Real=2.0)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	h = 1 / (1 - m)
+	c = length(D_squared)
+
 	u_a = -1
 	u_b = -1
 
 	# corollary 1
-	if D[i].right != 0
+	if D_squared[i].right != 0
 		for k = 1:c
-			if k != i && D[k].left == 0
+			if k != i && D_squared[k].left == 0
 				u_a = 0
 				break
 			end
@@ -162,9 +170,9 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	end
 	
 	# corollary 2
-	if D[i].right == D[i].left == 0
+	if D_squared[i].right == D_squared[i].left == 0
 		for k = 1:c
-			if k != i && D[k].left != 0
+			if k != i && D_squared[k].left != 0
 				u_a = 1
 				break
 			end
@@ -172,9 +180,9 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	end
 
 	# corollary 3
-	if D[i].left != 0
+	if D_squared[i].left != 0
 		for k = 1:c
-			if k != i && D[k].right == 0
+			if k != i && D_squared[k].right == 0
 				u_b = 0
 				break
 			end
@@ -182,24 +190,24 @@ function u_lfcm(X⃗::Vector{Interval}, prototypes::Vector{Vector{Interval}}, i:
 	end
 
 	# corollary 4
-	if D[i].left == 0
+	if D_squared[i].left == 0
 		for k = 1:c
-			if k != i && D[k].right != 0
+			if k != i && D_squared[k].right != 0
 				u_b = 1
 				break
 			end
 		end
 	end
 
-	d2jih = (D[i].right)^h
-	d1jih = (D[i].left)^h
+	d2jih = (D_squared[i].right)^h
+	d1jih = (D_squared[i].left)^h
 
 	u_a_denom = d2jih
 	u_b_denom = d1jih
 	for k = 1:c
 		if k != i
-			u_a_denom += (D[k].left)^h
-			u_b_denom += (D[k].right)^h
+			u_a_denom += (D_squared[k].left)^h
+			u_b_denom += (D_squared[k].right)^h
 		end
 	end
 	if u_a == -1
@@ -266,7 +274,7 @@ end
 
 function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real=2.0) # Karnik and Mendel's interval weighted average
     N = size(X, 1)
-    x = Vector{Real}(undef, N)
+    x = Vector{Float64}(undef, N)
     for k = 1:N
 		if bound == "lower"
 			x[k] = round(X[k].left, digits=6) # a_i
@@ -279,9 +287,9 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
     x_sorted = sort(x)
     sorted_indices = sortperm(x)
 
-    w = Vector{Real}(undef, N)
-    c = Vector{Real}(undef, N)
-    d = Vector{Real}(undef, N)
+    w = Vector{Float64}(undef, N)
+    c = Vector{Float64}(undef, N)
+    d = Vector{Float64}(undef, N)
     for k = 1:N
         w[k] = round(mid(u[k]), digits=6)
         c[k] = round(u[k].left, digits=6)
@@ -313,6 +321,7 @@ function km_iwa(X::Vector{Interval}, u::Vector{Interval}; bound::String, m::Real
 			w[left_indices] = c[left_indices]
 			w[right_indices] = d[right_indices]
 		end
+        w = max.(w, 0) # handle the weird case that w is negative??
 		# println(bound, " ", w)
 
         y_k = round(sum(w.^m .* x) / sum(w.^m), digits=6)
@@ -350,6 +359,28 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 		C[i] = FuzzyVector(C⃗)
 	end
 	C
+end
+
+function c_karnik(X::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=2.0)
+	m > 1 || error("fuzzifier m ∈ (1, ∞)")
+	levels = X[1][1].levels
+	num_levels = length(levels)
+	c = 1
+	p = length(X[1])
+
+	C⃗ = Vector{FuzzyNumber}(undef, p)
+	for j = 1:p
+		grades = Vector{Interval}(undef, num_levels)
+		for (lvl, α) in enumerate(levels)
+			X_cut = cut(X, j, α)
+			u_cut = cut(FuzzyVector(u), α)
+			c_left = km_iwa(X_cut, u_cut; bound="lower", m=m)
+			c_right = km_iwa(X_cut, u_cut; bound="upper", m=m)
+			grades[lvl] = Interval(c_left, c_right)
+		end
+		C⃗[j] = FuzzyNumber(levels, grades)
+	end
+	FuzzyVector(C⃗)
 end
 
 function d_interval(A⃗::FuzzyVector, B⃗::FuzzyVector; squared::Bool=false)
@@ -459,7 +490,6 @@ function d2(X⃗::Vector{FuzzyVector}, C⃗::Vector{FuzzyVector})
 	for i = 1:c
 		for j = 1:N
 			squared_fuzzy_distances[j, i] = FuzzySets.d_interval(X⃗[j], C⃗[i], squared=true)
-			# squared_fuzzy_distances[j, i] = FuzzySets.clip(squared_fuzzy_distances[j, i])
 		end
 	end
 	squared_fuzzy_distances
