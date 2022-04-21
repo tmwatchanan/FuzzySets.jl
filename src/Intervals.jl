@@ -45,6 +45,7 @@ Base.isempty(a::Interval) = isnan(a.left) || isnan(a.right)
 
 Base.copy(a::Interval) = Interval(a.left, a.right)
 
+width(a::Interval) = a.right - a.left
 mid(a::Interval) = (a.left + a.right) / 2
 rad(a::Interval) = (a.right - a.left) / 2
 mag(a::Interval) = max(abs(a.left), abs(a.right))
@@ -53,6 +54,8 @@ abs(a::Interval) = Interval(mig(a), mag(a))
 sqr(a::Interval) = a ^ 2
 
 # INTERVAL ARITHMETIC ========================================================
+
+Base.:-(a::Interval) = Interval(-a.right, -a.left)
 
 Base.:+(a::Real, b::Interval) = Interval(a + b.left, a + b.right)
 Base.:+(a::Interval, b::Real) = b + a
@@ -124,19 +127,18 @@ function Base.:^(a::Interval, b::Real)
     else
         is_integer = floor(Int, b) == b
         b = is_integer ? floor(Int, b) : b
-        if a.left > 0 || isodd(b)
-            left = a.left ^ b
-            right = a.right ^ b
-        elseif a.right < 0 && iseven(b)
+        # if (a.left > 0) || isodd(b)
+        #     left = a.left ^ b
+        #     right = a.right ^ b
+        if (a.right < 0) && iseven(b)
             left = a.right ^ b
             right = a.left ^ b
-        elseif a.left <= 0 && 0 <= a.right && iseven(b)
+        elseif (a.left <= 0 && 0 <= a.right) && iseven(b)
             left = 0
-            # println(a.left)
-            # println(abs(a.left))
-            # println(max(abs(a.left), abs(a.right)))
-            # println(mag(a))
             right = mag(a) ^ b
+        else
+            left = a.left ^ b
+            right = a.right ^ b
         end
     end
     left = left == Inf ? 0 : left
