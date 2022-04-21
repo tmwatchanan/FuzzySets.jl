@@ -14,6 +14,7 @@ include("FuzzyVectors.jl")
 include("FuzzyWeightedAverages.jl")
 include("FCM.jl")
 include("IT2FCM.jl")
+include("Dampening.jl")
 include("LFCM.jl")
 include("LPCM.jl")
 

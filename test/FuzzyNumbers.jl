@@ -33,11 +33,11 @@ D = SingletonFuzzyNumber(levels, number=0)
 @test D.grades == repeat([Interval(0)], length(levels)) # TODO: check with all(...)
 
 A = TriangularFuzzyNumber(levels, number=1, width=0.5)
-FuzzySets.clip!(A, α=0.2)
+FuzzySets.vertical_cut!(A, α=0.2)
 @test A.grades[1] == A.grades[41]
 @test A.grades[2] == A.grades[41]
 @test A.grades[40] == A.grades[41]
-B = FuzzySets.clip(A, α=0.2)
+B = FuzzySets.vertical_cut(A, α=0.2)
 @test B.grades[1] == B.grades[41]
 @test B.grades[2] == B.grades[41]
 @test B.grades[40] == B.grades[41]
@@ -70,3 +70,44 @@ A = GaussianFuzzyNumber(levels; μ=μ, σ=σ)
 @test A.levels[101] == 0.5
 @test A.grades[101] == Interval(-1.1774100225154747, 1.1774100225154747)
 @test A.grades[end] == Interval(μ)
+
+# Specificity
+A = TriangularFuzzyNumber(levels, number=0.5, width=0.5)
+@test FuzzySets.specificity(A) == 0.5
+@test FuzzySets.u_uncertainty(A) == 1
+
+B = TriangularFuzzyNumber(levels, number=0.5, width=0.2)
+@test FuzzySets.specificity(B) ≈ 0.8
+
+C = TriangularFuzzyNumber(levels, number=8.0, width=1.0)
+@test FuzzySets.specificity(C) ≈ 0.8
+
+S = SingletonFuzzyNumber(levels, number=4.0)
+@test FuzzySets.specificity(S) ≈ 1.0
+@test FuzzySets.u_uncertainty(S) ≈ 0
+
+step_size = 0.0001
+levels = collect(0:step_size:1)
+
+a = 0
+b = 5
+BoxFuzzyNumber = FuzzySets.BoxFuzzyNumber(levels, a=a, b=b)
+w = b - a
+@test round(FuzzySets.u_uncertainty(BoxFuzzyNumber), digits=3) ≈ round(log(1+w), digits=3)
+
+A1 = TriangularFuzzyNumber(levels, number=2, width=2.0)
+@test round(FuzzySets.u_uncertainty(A1), digits=3) ≈ 1.012
+
+A2 = TriangularFuzzyNumber(levels, number=2, width=1.0)
+@test round(FuzzySets.u_uncertainty(A2), digits=3) ≈ 0.648
+
+# A3 = TriangularFuzzyNumber(levels, number=2, width=2.0)
+# middle = Int((length(A3.levels) + 1)/2)
+# A3.grades[1:middle] = A3.grades[middle:end]
+# for i = middle+1:length(A3.levels)
+#     A3.grades[i] = Interval(NaN)
+# end
+# @test round(FuzzySets.u_uncertainty(A3) * 2, digits=3) ≈ 0.648
+
+A4 = TriangularFuzzyNumber(levels, number=2, width=0.5)
+@test round(FuzzySets.u_uncertainty(A4), digits=3) ≈ 0.386 # not sure
