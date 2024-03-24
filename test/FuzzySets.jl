@@ -5,7 +5,7 @@ using FuzzySets, Test
 step_size = 0.005
 levels = collect(0:step_size:1)
 
-A = FuzzyNumber(levels, number=0.0, width=0.5)
+A = TriangularFuzzyNumber(levels, number=0.0, width=0.5)
 @test A.levels == levels
 @test A.grades[1] == Interval(-0.5, 0.5)
 @test A[1] == Interval(-0.5, 0.5)

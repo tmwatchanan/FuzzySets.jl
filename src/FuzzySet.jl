@@ -64,3 +64,31 @@ function u_uncertainty(A::FuzzySet)
 	end
 	u / height(A)
 end
+
+function card(A::FuzzySet; step::Float64=0.01)
+    scalar_cardinality = 0
+    for x = support(A).left:step:support(A).right
+        scalar_cardinality += A(x)
+    end
+    scalar_cardinality
+end
+
+function card_union(A::FuzzySet, B::FuzzySet; step::Float64=0.01)
+    min_x = min(support(A).left, support(B).left)
+    max_x = max(support(A).right, support(B).right)
+    
+    μ = [max(A(x), B(x)) for x = min_x:step:max_x]
+    sum(μ) # cardinality = sum of membership values
+end
+
+function card_intersect(A::FuzzySet, B::FuzzySet; step::Float64=0.01)
+    min_x = min(support(A).left, support(B).left)
+    max_x = max(support(A).right, support(B).right)
+
+    μ = [min(A(x), B(x)) for x = min_x:step:max_x]
+    sum(μ) # cardinality = sum of membership values
+end
+
+function card_ratio(A::FuzzySet, B::FuzzySet; step::Float64=0.01)
+    card_intersect(A, B; step=step) / card_union(A, B; step=step)
+end

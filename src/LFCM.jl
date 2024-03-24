@@ -1,20 +1,22 @@
-function get_endpoints(N)
-	inners = 2 .^ collect(0:N-1)
-	outers = reverse(inners)
-	combs = Float64[]
-	for (inner, outer) in zip(inners, outers)
-		endpoints = [1, 2]
-		c = repeat(endpoints, inner=inner, outer=outer)
-		if Base.isempty(combs)
-			combs = c
-		else
-			combs = hcat(combs, c)
-		end
-	end
-	return combs
-end
+function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
+	levels = X⃗[1].levels
+	num_levels = length(levels)
 
-get_sequential_endpoints(N, i) = digits(i-1, base=2, pad=N) .+ 1
+	if X⃗ == Y⃗
+		d = SingletonFuzzyNumber(levels, number=0)
+	elseif length(X⃗) ≠ length(Y⃗)
+		return false
+	else
+		grades = Vector{Interval}(undef, num_levels)
+		for (lvl, α) in enumerate(levels)
+			X⃗_cut = cut(X⃗, α)
+			Y⃗_cut = cut(Y⃗, α)
+			grades[lvl] = d_dsw(X⃗_cut, Y⃗_cut; squared=squared)
+		end
+		d = FuzzyNumber(levels, grades)
+	end
+	d
+end
 
 function d_dsw(X⃗::Vector{Interval}, Y⃗::Vector{Interval}; squared::Bool=false)
 	p = length(X⃗)
@@ -34,26 +36,6 @@ function d_dsw(X⃗::Vector{Interval}, Y⃗::Vector{Interval}; squared::Bool=fal
 		d_max = max(d_max, dⱼᵢ)
 	end
 	Interval(d_min, d_max)
-end
-
-function d_dsw(X⃗::FuzzyVector, Y⃗::FuzzyVector; squared::Bool=false)
-	levels = X⃗[1].levels
-	num_levels = length(levels)
-
-	if X⃗ == Y⃗
-		d = SingletonFuzzyNumber(levels, number=0)
-	elseif length(X⃗) ≠ length(Y⃗)
-		return false
-	else
-		grades = Vector{Interval}(undef, num_levels)
-		for (lvl, α) in enumerate(levels)
-			X⃗_cut = cut(X⃗, α)
-			Y⃗_cut = cut(Y⃗, α)
-			grades[lvl] = d_dsw(X⃗_cut, Y⃗_cut; squared=squared)
-		end
-		d = FuzzyNumber(levels, grades)
-	end
-	d
 end
 
 function u(X⃗::FuzzyVector, prototypes::Vector{FuzzyVector}; m::Real=2.0, method::String="lfcm")
@@ -217,6 +199,9 @@ function u_lfcm(D_squared::Vector{Interval}, i::Int; m::Real=2.0)
 		u_b = d1jih / u_b_denom
 	end
 
+	u_a = round(u_a, digits=6)
+	u_b = round(u_b, digits=6)
+
 	Interval(u_a, u_b)
 end
 
@@ -342,7 +327,8 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 	N, c = size(u)
 	p = length(X[1])
 
-	C = Vector{FuzzyVector}(undef, c)
+	
+	𝑪 = Vector{FuzzyVector}(undef, c)
 	for i = 1:c
 		C⃗ = Vector{FuzzyNumber}(undef, p)
 		for j = 1:p
@@ -356,9 +342,9 @@ function c_karnik(X::Vector{FuzzyVector}, u::Matrix{FuzzyNumber}; m::Real=2.0)
 			end
 			C⃗[j] = FuzzyNumber(levels, grades)
 		end
-		C[i] = FuzzyVector(C⃗)
+		𝑪[i] = FuzzyVector(C⃗)
 	end
-	C
+	𝑪
 end
 
 function c_karnik(X::Vector{FuzzyVector}, u::Vector{FuzzyNumber}; m::Real=2.0)

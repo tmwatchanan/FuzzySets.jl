@@ -90,7 +90,7 @@ function draw(ax::Axis3, FV::FuzzyVector; step=0.001, colormap=:jet1)
     # annotate!(fig, [(max_x, max_y, μ, (μ, 8, :black, :center))])
 end
 
-function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker=nothing, peak_text::Bool=false, font=Plots.font("Times", 8))
+function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker=nothing, peak_text::Bool=false, font=Plots.font("Times", 8), colorbar::Bool=true)
     gr(xtickfont=font, ytickfont=font, legendfont=font)
 	A₁ = FV[1]
 	A₂ = FV[2]
@@ -109,7 +109,7 @@ function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha
 		fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
 	else
 		fig = Plots.contour(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
-		fig = Plots.contour(fig, [0, 0], [0, 0], [0, 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=true)
+		# fig = Plots.contour(fig, [0, 0], [0, 0], [0, 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=colorbar)
 	end
 
 	# plot peak
@@ -126,7 +126,7 @@ function draw2d(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha
 	fig
 end
 
-function draw_contour_2d(FVs::Vector{FuzzyVector}; step::Float64=0.01, fig=nothing, contour_colors=[:jet1, :jet1], peak_colors=["black", "red"], alpha::Vector{Float64}=nothing, marker=nothing, peak_text::Bool=false, offset::Real=0, xlim=nothing, ylim=nothing, font=Plots.font("Times", 8))
+function draw_contour_2d(FVs::Vector{FuzzyVector}; step::Float64=0.01, fig=nothing, contour_colors=[:jet1, :jet1], peak_colors=["black", "red"], alpha::Vector{Float64}=nothing, marker=nothing, peak_text::Bool=false, offset::Real=0, xlim=nothing, ylim=nothing, font=Plots.font("Times", 8), colorbar::Bool=true)
     gr(xtickfont=font, ytickfont=font, legendfont=font)
 
 	centers = []
@@ -147,7 +147,7 @@ function draw_contour_2d(FVs::Vector{FuzzyVector}; step::Float64=0.01, fig=nothi
 			fig = Plots.contour(X, Y, f, c=contour_colors[i], aspect_ratio=1.0, seriesalpha=alpha[i], xlim=xlim, ylim=ylim, fill=true)
 		else
 			fig = Plots.contour(fig, X, Y, f, c=contour_colors[i], aspect_ratio=1.0, seriesalpha=alpha[i], fill=true, xlim=xlim, ylim=ylim)
-			fig = Plots.contour(fig, [0, 0], [0, 0], [0, 1], c=contour_colors[i], aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=true, xlim=xlim, ylim=ylim)
+			fig = Plots.contour(fig, [0, 0], [0, 0], [0, 1], c=contour_colors[i], aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=colorbar, xlim=xlim, ylim=ylim)
 		end
 	end
 

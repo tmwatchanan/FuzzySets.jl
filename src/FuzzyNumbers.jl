@@ -152,7 +152,7 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
 end
 
 function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, linecolors::Vector{String}=["black", "red"], xlabel="", ylabel="", font=Plots.font("Times", 8), size=(450, 150), offset_value=0)
-    gr(xguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+    gr(xguidefont=font, xtickfont=font, ytickfont=font, ztickfont=font, legendfont=font)
 	if isnothing(fig)
 		if isnothing(range)
             fig = plot(ylims = (0, 1))
@@ -214,7 +214,8 @@ Base.:+(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (+).(A.grades, B
 Base.:-(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (-).(A.grades, B.grades))
 Base.:*(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (*).(A.grades, B.grades))
 Base.:/(A::FuzzyNumber, B::FuzzyNumber) = FuzzyNumber(A.levels, (/).(A.grades, B.grades))
-Base.:*(a::Real, A::FuzzyNumber) = FuzzyNumber(A.levels, (*).(a, A.grades))
+Base.:*(a::Real, B::FuzzyNumber) = SingletonFuzzyNumber(B.levels, number=a) * B
+Base.:/(a::Real, B::FuzzyNumber) = SingletonFuzzyNumber(B.levels, number=a) / B
 Base.:*(A::FuzzyNumber, a::Real) = a * A
 
 # =============================================================================

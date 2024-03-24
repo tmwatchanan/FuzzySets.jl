@@ -7,6 +7,7 @@ using LaTeXStrings
 import Plots
 using FLoops
 
+include("Utilities.jl")
 include("Intervals.jl")
 include("FuzzySet.jl")
 include("FuzzyNumbers.jl")
@@ -19,6 +20,7 @@ include("IT2FCM.jl")
 include("Dampening.jl")
 include("LFCM.jl")
 include("LPCM.jl")
+include("LSOFM.jl")
 
 export
     Interval, .., mid, rad,
