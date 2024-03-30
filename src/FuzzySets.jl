@@ -2,6 +2,7 @@ module FuzzySets
 
 name() = return "FuzzySets.jl"
 
+using ColorSchemes
 using GLMakie
 using LaTeXStrings
 import Plots

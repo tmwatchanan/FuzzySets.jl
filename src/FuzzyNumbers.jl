@@ -43,7 +43,7 @@ function BoxFuzzyNumber(levels::Vector{<:Real}; a::Real, b::Real)
     FuzzyNumber(levels, box.(levels, a=a, b=b))
 end
 
-Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(peak(A))")
+Base.show(io::IO, A::FuzzyNumber) = println(io, "fuzzy number peak $(round(peak(A), digits=3)), centroid $(round(centroid(A), digits=3))")
 Base.copy(A::FuzzyNumber) = FuzzyNumber(copy(A.levels), copy(A.grades))
 
 function Base.:(==)(A::FuzzyNumber, B::FuzzyNumber)

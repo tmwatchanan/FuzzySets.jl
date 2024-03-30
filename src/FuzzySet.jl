@@ -26,7 +26,7 @@ function height(A::FuzzySet)
     end
 end
 peak(A::FuzzySet) = mid(core(A))
-function centroid(A::FuzzySet; step::Float64=0.01)
+function centroid(A::FuzzySet; step::Float64=0.01)::Real
     c = 0.0
     μ = 0.0
     for x = support(A).left:step:support(A).right

@@ -244,6 +244,33 @@ function draw2d_makie(ax::Axis, FV::FuzzyVector; step=0.01, colormap=:jet1, alph
 	contour!(ax, X, Y, Z, colormap=colormap)#, alpha=alpha)
 end
 
+function draw_3d_makie!(FVs::Vector{FuzzyVector}; step_size::Float64=0.01, ax=nothing, color=:grey, alpha::Float64=nothing, peak_text::Bool=false, offset::Real=0, xlim=nothing, ylim=nothing, font=Plots.font("Times", 8))
+	centers = []
+	for (i, FV) in enumerate(FVs)
+		A₁ = FV[1]
+		A₂ = FV[2]
+		x1 = A₁.grades[1].left
+		x2 = A₁.grades[1].right
+		y1 = A₂.grades[1].left
+		y2 = A₂.grades[1].right
+		X = collect(x1:step_size:x2)
+		Y = collect(y1:step_size:y2)
+		f(x, y) = min(A₁(x), A₂(y))
+		center_x = peak_center(A₁) # or can be centroid()
+		center_y = peak_center(A₂) # or can be centroid()
+		push!(centers, (center_x, center_y))
+		GLMakie.surface!(ax, X, Y, f, aspect_ratio=1.0, colormap=color, alpha=alpha, fill=true, xlim=xlim, ylim=ylim)
+	end
+
+	# plot peak
+	# for (i, (center_x, center_y)) in enumerate(centers)
+	# 	if peak_text
+	# 		# fig = Plots.annotate(fig, [(center_x, center_y+offset, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, peak_colors[i], :center, "Times"))])
+	# 		Plots.annotate!([(center_x, center_y+offset, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, peak_colors[i], :center, "Times"))])
+	# 	end
+	# end
+end
+
 function u_uncertainty(FV::FuzzyVector; agg::String="average")
 	p = length(FV)
 	Us = Vector{Float64}(undef, p)
