@@ -27,7 +27,7 @@ export
     Interval, .., mid, rad,
     FuzzySet, support, core, height, cut, centroid,
     FuzzyNumber, SingletonFuzzyNumber, TriangularFuzzyNumber, TrapezoidalFuzzyNumber, GaussianFuzzyNumber,
-    FuzzyVector, 
+    FuzzyVector,
     peak, draw,
     fuzzy_weighted_average,
     euclidean_distance,

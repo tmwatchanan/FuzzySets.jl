@@ -21,25 +21,33 @@ mutable struct FuzzyNumber <: FuzzySet
     # end
 end
 
-function TriangularFuzzyNumber(levels::Vector{<:Real}; number::Real=0.0, width::Real=0.5)
-    println("Triangular FuzzyNumber $number created")
+function TriangularFuzzyNumber(levels::Vector{<:Real}; number::Real=0.0, width::Real=0.5, debug::Bool=false)
+    if debug
+        println("Triangular FuzzyNumber $number created")
+    end
     FuzzyNumber(levels, triangle.(levels, b=number, width=width))
 end
 
-function TrapezoidalFuzzyNumber(levels::Vector{<:Real}; number::Real, w_l::Real, w_r::Real, a::Real)
-    println("Trapezoidal FuzzyNumber $number created")
+function TrapezoidalFuzzyNumber(levels::Vector{<:Real}; number::Real, w_l::Real, w_r::Real, a::Real, debug::Bool=false)
+    if debug
+        println("Trapezoidal FuzzyNumber $number created")
+    end
     FuzzyNumber(levels, trapezoid.(levels, p=number, w_l=w_l, w_r=w_r, a=a))
 end
 
-function GaussianFuzzyNumber(levels::Vector{<:Real}; μ::Real, σ::Real)
-    println("Gaussian FuzzyNumber $μ created")
+function GaussianFuzzyNumber(levels::Vector{<:Real}; μ::Real, σ::Real, debug::Bool=false)
+    if debug
+        println("Gaussian FuzzyNumber $μ created")
+    end
     A = FuzzyNumber(levels, gaussian_interval.(levels; μ=μ, σ=σ))
     A.grades[1:80] .= [A.grades[81]] # solve infinite support
     A
 end
 
-function BoxFuzzyNumber(levels::Vector{<:Real}; a::Real, b::Real)
-    println("BoxFuzzyNumber created")
+function BoxFuzzyNumber(levels::Vector{<:Real}; a::Real, b::Real, debug::Bool=false)
+    if debug
+        println("BoxFuzzyNumber created")
+    end
     FuzzyNumber(levels, box.(levels, a=a, b=b))
 end
 
@@ -110,22 +118,22 @@ end
 
 function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="black", font=Plots.font("Times", 8), ylabel="", dpi=200)
     # gr(xguidefont=font, yguidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
-	if isnothing(fig)
-		if isnothing(range)
-            fig = plot(ylabel=ylabel, ylims = (0, 1))
+    if isnothing(fig)
+        if isnothing(range)
+            fig = plot(ylabel=ylabel, ylims=(0, 1))
         else
-			xmin = range[1]
-			xmax = range[2]
-            fig = plot(ylabel=ylabel, xlims = (xmin, xmax), ylims = (0, 1)) # xticks=collect(xmin:1:xmax)
-		end
-	end
-	if linecolor == "random"
-		linecolor = rand(["black", "red", "blue", "green"])
-	end
+            xmin = range[1]
+            xmax = range[2]
+            fig = plot(ylabel=ylabel, xlims=(xmin, xmax), ylims=(0, 1)) # xticks=collect(xmin:1:xmax)
+        end
+    end
+    if linecolor == "random"
+        linecolor = rand(["black", "red", "blue", "green"])
+    end
 
     # draw level cuts
-	for i = 1:length(fuzzynumber.levels)
-		lvl = fuzzynumber.levels[i]
+    for i = 1:length(fuzzynumber.levels)
+        lvl = fuzzynumber.levels[i]
         interval = fuzzynumber[i]
         if interval.left == interval.right
             scatter!(fig, [interval.left], [lvl], c=linecolor, marker=1, legend=false)
@@ -133,7 +141,7 @@ function draw(fuzzynumber::FuzzyNumber; fig=nothing, range=nothing, linecolor="b
             plot!(fig, vec(interval), [lvl, lvl], linecolor=linecolor, legend=false)
         end
         # break
-	end
+    end
     # points = [Point2f0(fuzzynumber.grades[i][1], fuzzynumber.levels[i]) => Point2f0(fuzzynumber.grades[i][2], fuzzynumber.levels[i]) for i = 1:length(fuzzynumber.levels)]
     # linesegments(points, color = :red, linewidth = 2)
 
@@ -153,15 +161,15 @@ end
 
 function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, linecolors::Vector{String}=["black", "red"], xlabel="", ylabel="", font=Plots.font("Times", 8), size=(450, 150), offset_value=0)
     gr(xguidefont=font, xtickfont=font, ytickfont=font, ztickfont=font, legendfont=font)
-	if isnothing(fig)
-		if isnothing(range)
-            fig = plot(ylims = (0, 1))
+    if isnothing(fig)
+        if isnothing(range)
+            fig = plot(ylims=(0, 1))
         else
-			xmin = range[1]
-			xmax = range[2]
-            fig = plot(xlims = (xmin, xmax), ylims = (0, 1), xticks=collect(xmin:0.2:xmax))
-		end
-	end
+            xmin = range[1]
+            xmax = range[2]
+            fig = plot(xlims=(xmin, xmax), ylims=(0, 1), xticks=collect(xmin:0.2:xmax))
+        end
+    end
 
     for (index, (fuzzynumber, linecolor)) in enumerate(zip(fuzzynumbers, linecolors))
         # draw level cuts
@@ -179,7 +187,7 @@ function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, l
             end
             # break
         end
-        
+
         # points = [Point2f0(fuzzynumber.grades[i][1], fuzzynumber.levels[i]) => Point2f0(fuzzynumber.grades[i][2], fuzzynumber.levels[i]) for i = 1:length(fuzzynumber.levels)]
         # linesegments(points, color = :red, linewidth = 2)
 
@@ -195,7 +203,7 @@ function draw_u(fuzzynumbers::Vector{FuzzyNumber}; fig=nothing, range=nothing, l
         # end
         offset = -(index - 1) * offset_value
         position = index == 1 ? :left : :right
-        annotate!(fig, [(xₘ, μ+offset, (peak_text, 8, linecolor, position, "Times"))])
+        annotate!(fig, [(xₘ, μ + offset, (peak_text, 8, linecolor, position, "Times"))])
         # vline!(fig, [xₘ], line=(:dot), linecolor=:black, legend=false)
     end
     plot!(dpi=600, size=size, xlabel=xlabel, ylabel=ylabel)
@@ -221,7 +229,7 @@ Base.:*(A::FuzzyNumber, a::Real) = a * A
 # =============================================================================
 
 function cut(X::Vector{FuzzyNumber}, α::Real)
-	N = length(X)
-	cuts = [cut(X[i], α) for i = 1:N]
+    N = length(X)
+    cuts = [cut(X[i], α) for i = 1:N]
     cuts
 end

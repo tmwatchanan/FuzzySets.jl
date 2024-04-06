@@ -15,7 +15,7 @@ function lsofm_find_distances(iₓ, N₁, N₂)::Matrix{Float64}
     d_squared
 end
 
-function lsofm_update_weight(w⃗::FuzzyVector, x⃗::FuzzyVector; η::Real, h::Real, dampening::Union{Nothing, Float64}=nothing)::FuzzyVector
+function lsofm_update_weight(w⃗::FuzzyVector, x⃗::FuzzyVector; η::Real, h::Real, dampening::Union{Nothing,Float64}=nothing)::FuzzyVector
     levels = w⃗[1].levels
     num_levels = length(levels)
     p = length(w⃗)
@@ -77,32 +77,32 @@ end
 
 function plot2d_lsofm(FV::FuzzyVector; step::Float64=0.01, fig=nothing, c=:jet1, alpha::Real=nothing, marker=nothing, peak_text::Bool=false, font=Plots.font("Times", 8), colorbar::Bool=true)
     gr(xtickfont=font, ytickfont=font, legendfont=font)
-	A₁ = FV[1]
-	A₂ = FV[2]
-	x1 = support(A₁).left
-	x2 = support(A₁).right
-	y1 = support(A₂).left
-	y2 = support(A₂).right
-	X = collect(x1:step:x2)
-	Y = collect(y1:step:y2)
-	f(x, y) = min(A₁(x), A₂(y))
-	if isnothing(fig)
-		fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
-	else
-		Plots.contour!(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
-		# Plots.contour!(fig, [0, 0], [0, 0], [0, 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=colorbar)
-	end
+    A₁ = FV[1]
+    A₂ = FV[2]
+    x1 = support(A₁).left
+    x2 = support(A₁).right
+    y1 = support(A₂).left
+    y2 = support(A₂).right
+    X = collect(x1:step:x2)
+    Y = collect(y1:step:y2)
+    f(x, y) = min(A₁(x), A₂(y))
+    if isnothing(fig)
+        fig = Plots.contour(X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
+    else
+        Plots.contour!(fig, X, Y, f, c=c, aspect_ratio=1.0, seriesalpha=alpha, fill=true)
+    end
+    Plots.contour!(fig, [0; 0], [0; 0], [0 0; 1 1], c=c, aspect_ratio=1.0, seriesalpha=1.0, fill=true, colorbar=true)
 
-	# plot peak
-	center_x = peak_center(A₁) # or can be centroid()
-	center_y = peak_center(A₂) # or can be centroid()
-	if !isnothing(marker)
-		Plots.scatter!(fig, (center_x, center_y), legend=false, m=marker, color=:black)
-	end
-	if peak_text
-		Plots.annotate!([(center_x, center_y, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, :black, :center))])
-	end
+    # plot peak
+    center_x = peak_center(A₁) # or can be centroid()
+    center_y = peak_center(A₂) # or can be centroid()
+    if !isnothing(marker)
+        Plots.scatter!(fig, (center_x, center_y), legend=false, m=marker, color=:black)
+    end
+    if peak_text
+        Plots.annotate!([(center_x, center_y, ("$(round(center_x, digits=2)), $(round(center_y, digits=2))", 8, :black, :center))])
+    end
 
-	Plots.plot!(fig, dpi=200)
-	fig
+    Plots.plot!(fig, dpi=200)
+    fig
 end
